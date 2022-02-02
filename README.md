@@ -214,5 +214,5 @@ If you find an issue with eve-tools, then you can open an issue on this projects
 
 [Click here](mailto:babdelmageed@juniper.net) if you have any feedback or suggestions.
 
-![Small Logo](README.assets/Small Logo.png)
+![Small_Logo](README.assets/Small_Logo.png)
 
