@@ -4,6 +4,8 @@ EVE-NG tools, A Utility to make operations with EVE-NG more friendly. Also it su
 
 
 
+
+
 # Installation
 
 The tool need to be hosted on the eve-ng server since it use some local commands to collect data. so please execute the below commands on the eve-ng server
@@ -54,6 +56,8 @@ Two operations are currently supported
 
 
 
+
+
 ## Lab Operations: 
 
 ```sh
@@ -71,6 +75,8 @@ options:
 
 
 
+
+
 **Describe Lab**
 
 ```sh
@@ -80,6 +86,8 @@ python evetools.py lab --describe
 ![image-20220202172006794](README.assets/image-20220202172006794.png)
 
 ![image-20220202172227058](README.assets/image-20220202172227058.png)
+
+
 
 
 
@@ -95,6 +103,10 @@ python evetools.py lab --action start
 
 
 
+
+
+
+
 **Stop some nodes** (omit `**--nodes**` to stop all of them)
 
 ```sh
@@ -104,6 +116,10 @@ python evetools.py lab --action stop --nodes issu-0,issu-1
 
 
 ![image-20220202172400508](README.assets/image-20220202172400508.png)
+
+
+
+
 
 
 
@@ -126,6 +142,10 @@ options:
 
 
 
+
+
+
+
 **Listing Snapshots**
 
 ```sh
@@ -136,6 +156,10 @@ python evetools.py snapshot --list
 
 
 
+
+
+
+
 **Creating new snapshot**
 
 ```sh
@@ -143,6 +167,10 @@ python evetools.py snapshot --ops create --snapshot test_the_snapshoting
 ```
 
 ![image-20220202172912424](README.assets/image-20220202172912424.png)
+
+
+
+
 
 
 
@@ -158,6 +186,10 @@ python evetools.py snapshot --ops delete --snapshot test_the_snapshoting
 
 
 
+
+
+
+
 **Reverting  the snapshot**
 
 ```sh
@@ -165,6 +197,10 @@ python evetools.py snapshot --ops revert --snapshot test_the_snapshoting
 ```
 
 ![image-20220202172904032](README.assets/image-20220202172904032.png)
+
+
+
+
 
 
 
@@ -178,6 +214,5 @@ If you find an issue with eve-tools, then you can open an issue on this projects
 
 [Click here](mailto:babdelmageed@juniper.net) if you have any feedback or suggestions.
 
-[![Small Logo](README.assets/Small Logo.png)](https://raw.githubusercontent.com/TheNetworker/visualize_bgp_asns/master/Small Logo.png)
+![Small Logo](README.assets/Small Logo-3813112.png)
 
-s
