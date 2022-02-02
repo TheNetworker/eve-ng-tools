@@ -4,6 +4,10 @@ EVE-NG tools, A Utility to make operations with EVE-NG more friendly. Also it su
 
 
 
+Also, this tool could be used to assist in migration from KVM to EVE-NG. Full details are described here\
+
+https://basimaly.wordpress.com/2022/02/01/migrating-from-kvm-to-eve-ng/
+
 
 
 # Installation
