@@ -14,7 +14,7 @@ The tool need to be hosted on the eve-ng server since it use some local commands
 
 ## Create virtualenv
 
-```sh
+```bash
 virtualenv --python /usr/bin/python3.10  .venv # use python version > 3.5
 source .venv/bin/activate
 ```
@@ -23,7 +23,7 @@ source .venv/bin/activate
 
 ## Clone Repo and install requirements
 
-```sh
+```bash
 
 git clone https://github.com/TheNetworker/eve-ng-tools.git
 cd eve-ng-tools
@@ -35,7 +35,7 @@ pip install -r requirements.txt
 
 ## Create lab env
 
-```sh
+```bash
 cat << 'EOF' > /root/telco_lab.env 
 for key in $( set | awk '{FS="="}  /^eve_/ {print $1}' ); do unset $key ; done
 export eve_ip=192.168.100.252 #<-- Provide here the eve_ip address
@@ -60,7 +60,7 @@ Two operations are currently supported
 
 ## Lab Operations: 
 
-```sh
+```bash
 python evetools.py lab -h
 usage: eve lab [-h] [--describe] [--action {start,stop,list}] [--nodes NODES]
 
@@ -79,7 +79,7 @@ options:
 
 **Describe Lab**
 
-```sh
+```bash
 python evetools.py lab --describe 
 ```
 
@@ -93,7 +93,7 @@ python evetools.py lab --describe
 
 **Start all nodes in the lab**
 
-```sh
+```bash
 python evetools.py lab --action start
 ```
 
@@ -109,7 +109,7 @@ python evetools.py lab --action start
 
 **Stop some nodes** (omit `**--nodes**` to stop all of them)
 
-```sh
+```bash
 python evetools.py lab --action stop --nodes issu-0,issu-1
 ```
 
@@ -125,7 +125,7 @@ python evetools.py lab --action stop --nodes issu-0,issu-1
 
 ## Snapshot operations
 
-```sh
+```bash
 python evetools.py snapshot -h
 usage: eve snapshot [-h] [--list] [--ops {create,revert,delete}] [--snapshot SNAPSHOT] [--nodes NODES]
 
@@ -162,7 +162,7 @@ python evetools.py snapshot --list
 
 **Creating new snapshot**
 
-```sh
+```bash
 python evetools.py snapshot --ops create --snapshot test_the_snapshoting
 ```
 
@@ -176,7 +176,7 @@ python evetools.py snapshot --ops create --snapshot test_the_snapshoting
 
 **Deleting snapshots**
 
-```sh
+```bash
 python evetools.py snapshot --ops delete --snapshot test_the_snapshoting
 ```
 
@@ -192,7 +192,7 @@ python evetools.py snapshot --ops delete --snapshot test_the_snapshoting
 
 **Reverting  the snapshot**
 
-```sh
+```bash
 python evetools.py snapshot --ops revert --snapshot test_the_snapshoting
 ```
 
