@@ -125,9 +125,9 @@ python evetools.py lab --rack_and_stack
 ```
 
 This operation will read the connection file defined in lab env `eve_lab_cnx_file` (Please see file
-named `5G_Core_in_CSP_CNX.yml` for an example of connection) and will connect them according to the cable plan. Very
-useful for architects exploring new design patterns or testing dramatic network changes. This operation is *idempotent*
-. meaning you can run it multiple times and you will get the same result at the end.
+named [5G_Core_in_CSP_CNX.yml](5G_Core_in_CSP_CNX.yml) for an example of connection) and will connect them according to
+the cable plan. Very useful for architects exploring new design patterns or testing dramatic network changes. This
+operation is *idempotent* . meaning you can run it multiple times and you will get the same result at the end.
 
 Please see the below demo fro more infomration
 
@@ -138,6 +138,8 @@ Please see the below demo fro more infomration
 *CLI*
 
 ![image-20220428070102914](README.assets/image-20220428070102914.png)
+
+
 
 *Topology **before** the racking and stacking connection*
 
@@ -238,12 +240,6 @@ python evetools.py snapshot --ops revert --snapshot test_the_snapshoting
 ```
 
 ![image-20220202172904032](README.assets/image-20220202172904032.png)
-
-
-
-
-
-
 
 ## Questions/Discussion
 
