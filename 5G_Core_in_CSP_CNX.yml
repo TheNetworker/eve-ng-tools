@@ -1,0 +1,130 @@
+connections:
+  - { src_node: CORE1_R1 , dst_node: CORE1_R2 , src_intf: ge-0/0/0 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.1.2.0/31" }
+  - { src_node: CORE1_R1 , dst_node: CORE4_R7 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.1.7.0/31" }
+  - { src_node: CORE1_R1 , dst_node: CORE2_R4 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/8 , p2p_subnet: "172.1.4.0/31" }
+  - { src_node: CORE1_R1 , dst_node: PEAGG1_R9 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.1.9.0/31" }
+  - { src_node: CORE1_R1 , dst_node: PEAGG1_R10 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.1.10.0/31" }
+
+  - { src_node: CORE1_R2 , dst_node: CORE2_R3 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.2.3.0/31" }
+  - { src_node: CORE1_R2 , dst_node: CORE4_R8 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.2.8.0/31" }
+  - { src_node: CORE1_R2 , dst_node: PEAGG1_R9 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.2.9.0/31" }
+  - { src_node: CORE1_R2 , dst_node: PEAGG1_R10 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.2.10.0/31" }
+
+  - { src_node: CORE2_R3 , dst_node: CORE2_R4 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.3.4.0/31" }
+  - { src_node: CORE2_R3 , dst_node: CORE4_R8 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.3.8.0/31" }
+  - { src_node: CORE2_R3 , dst_node: CORE3_R5 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.3.5.0/31" }
+  - { src_node: CORE2_R3 , dst_node: PEAGG1_R9 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.3.9.0/31" }
+  - { src_node: CORE2_R3 , dst_node: PEAGG2_R11 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.3.11.0/31" }
+  - { src_node: CORE2_R3 , dst_node: PEAGG2_R12 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.3.12.0/31" }
+
+  - { src_node: CORE2_R4 , dst_node: CORE4_R7 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.4.7.0/31" }
+  - { src_node: CORE2_R4 , dst_node: CORE3_R6 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.4.6.0/31" }
+  - { src_node: CORE2_R4 , dst_node: PEAGG1_R10 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.4.10.0/31" }
+  - { src_node: CORE2_R4 , dst_node: PEAGG2_R11 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.4.11.0/31" }
+  - { src_node: CORE2_R4 , dst_node: PEAGG2_R12 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.4.12.0/31" }
+  - { src_node: CORE2_R4 , dst_node: PEAGG3_R13 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.4.13.0/31" }
+  - { src_node: CORE2_R4 , dst_node: PEAGG3_R14 , src_intf: ge-0/0/7 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.4.14.0/31" }
+
+  - { src_node: CORE3_R5 , dst_node: CORE3_R6 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.5.6.0/31" }
+  - { src_node: CORE3_R5 , dst_node: CORE4_R8 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.5.8.0/31" }
+  - { src_node: CORE3_R5 , dst_node: PEAGG4_R15 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.5.15.0/31" }
+  - { src_node: CORE3_R5 , dst_node: PEAGG4_R16 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.5.16.0/31" }
+  - { src_node: CORE3_R5 , dst_node: ABR4_R36 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.5.36.0/31" }
+
+  - { src_node: CORE3_R6 , dst_node: CORE4_R7 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.6.7.0/31" }
+  - { src_node: CORE3_R6 , dst_node: PEAGG3_R13 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.6.13.0/31" }
+  - { src_node: CORE3_R6 , dst_node: PEAGG3_R14 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.6.14.0/31" }
+  - { src_node: CORE3_R6 , dst_node: PEAGG4_R15 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.6.15.0/31" }
+  - { src_node: CORE3_R6 , dst_node: PEAGG4_R16 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.6.16.0/31" }
+
+  - { src_node: CORE4_R7 , dst_node: CORE4_R8 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.7.8.0/31" }
+  - { src_node: CORE4_R7 , dst_node: PEAGG5_R17 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.7.17.0/31" }
+  - { src_node: CORE4_R7 , dst_node: PEAGG5_R18 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.7.18.0/31" }
+
+  - { src_node: CORE4_R8 , dst_node: PEAGG5_R17 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.8.17.0/31" }
+  - { src_node: CORE4_R8 , dst_node: PEAGG5_R18 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.8.18.0/31" }
+  - { src_node: CORE4_R8 , dst_node: ABR5_R37 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.8.37.0/31" }
+
+  - { src_node: PEAGG1_R9 , dst_node: PEAGG1_R10 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.9.10.0/31" }
+  - { src_node: PEAGG1_R9 , dst_node: IGW1_R19 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.9.19.0/31" }
+  - { src_node: PEAGG1_R9 , dst_node: IGW1_R20 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.9.20.0/31" }
+  - { src_node: PEAGG1_R9 , dst_node: PRE1_R25 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.9.25.0/31" }
+  - { src_node: PEAGG1_R9 , dst_node: PRE1_R26 , src_intf: ge-0/0/7 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.9.26.0/31" }
+  - { src_node: PEAGG1_R9 , dst_node: MPLSRR1_R30 , src_intf: ge-0/0/8 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.9.30.0/31" }
+  - { src_node: PEAGG1_R9 , dst_node: MPLSRR1_R31 , src_intf: ge-0/0/9 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.9.31.0/31" }
+
+  - { src_node: PEAGG1_R10 , dst_node: IGW1_R19 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.10.19.0/31" }
+  - { src_node: PEAGG1_R10 , dst_node: IGW1_R20 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.10.20.0/31" }
+  - { src_node: PEAGG1_R10 , dst_node: PRE1_R25 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.10.25.0/31" }
+  - { src_node: PEAGG1_R10 , dst_node: PRE1_R26 , src_intf: ge-0/0/7 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.10.26.0/31" }
+  - { src_node: PEAGG1_R10 , dst_node: MPLSRR1_R30 , src_intf: ge-0/0/8 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.10.30.0/31" }
+  - { src_node: PEAGG1_R10 , dst_node: MPLSRR1_R31 , src_intf: ge-0/0/9 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.10.31.0/31" }
+
+  - { src_node: PEAGG2_R11 , dst_node: PRE1_R27 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.11.27.0/31" }
+  - { src_node: PEAGG2_R11 , dst_node: MPLSRR1_R30 , src_intf: ge-0/0/3  ,dst_intf: ge-0/0/2 , p2p_subnet: "172.11.30.0/31" }
+  - { src_node: PEAGG2_R11 , dst_node: MPLSRR1_R31 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.11.31.0/31" }
+
+  - { src_node: PEAGG2_R12 , dst_node: PRE1_R27 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.12.27.0/31" }
+  - { src_node: PEAGG2_R12 , dst_node: MPLSRR1_R30 , src_intf: ge-0/0/3  ,dst_intf: ge-0/0/3 , p2p_subnet: "172.12.30.0/31" }
+  - { src_node: PEAGG2_R12 , dst_node: MPLSRR1_R31 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.12.31.0/31" }
+
+  - { src_node: PEAGG3_R13 , dst_node: PEAGG3_R14 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.13.14.0/31" }
+  - { src_node: PEAGG3_R13 , dst_node: TELCOGW1_R39 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.13.39.0/31" }
+  - { src_node: PEAGG3_R13 , dst_node: TELCOGW1_R40 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.13.40.0/31" }
+
+  - { src_node: PEAGG3_R14 , dst_node: TELCOGW1_R39 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.14.39.0/31" }
+  - { src_node: PEAGG3_R14 , dst_node: TELCOGW1_R40 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.14.40.0/31" }
+
+
+  - { src_node: PEAGG4_R15 , dst_node: IGW3_R23 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.15.23.0/31" }
+  - { src_node: PEAGG4_R15 , dst_node: IGW3_R24 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.15.24.0/31" }
+  - { src_node: PEAGG4_R15 , dst_node: MPLSRR2_R32 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.15.32.0/31" }
+  - { src_node: PEAGG4_R15 , dst_node: MPLSRR2_R33 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.15.33.0/31" }
+
+  - { src_node: PEAGG4_R16 , dst_node: IGW3_R23 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.16.23.0/31" }
+  - { src_node: PEAGG4_R16 , dst_node: IGW3_R24 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.16.24.0/31" }
+  - { src_node: PEAGG4_R16 , dst_node: MPLSRR2_R32 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.16.32.0/31" }
+  - { src_node: PEAGG4_R16 , dst_node: MPLSRR2_R33 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.16.33.0/31" }
+
+  - { src_node: PEAGG5_R17 , dst_node: IGW2_R21 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.17.21.0/31" }
+  - { src_node: PEAGG5_R17 , dst_node: IGW2_R22 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.17.22.0/31" }
+  - { src_node: PEAGG5_R17 , dst_node: MPLSRR2_R32 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.17.32.0/31" }
+  - { src_node: PEAGG5_R17 , dst_node: MPLSRR2_R33 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.17.33.0/31" }
+  - { src_node: PEAGG5_R17 , dst_node: PRE2_R28 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.17.28.0/31" }
+  - { src_node: PEAGG5_R17 , dst_node: PRE2_R29 , src_intf: ge-0/0/7 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.17.29.0/31" }
+
+  - { src_node: PEAGG5_R18 , dst_node: IGW2_R21 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.18.21.0/31" }
+  - { src_node: PEAGG5_R18 , dst_node: IGW2_R22 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.18.22.0/31" }
+  - { src_node: PEAGG5_R18 , dst_node: MPLSRR2_R32 , src_intf: ge-0/0/4 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.18.32.0/31" }
+  - { src_node: PEAGG5_R18 , dst_node: MPLSRR2_R33 , src_intf: ge-0/0/5 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.18.33.0/31" }
+  - { src_node: PEAGG5_R18 , dst_node: PRE2_R28 , src_intf: ge-0/0/6 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.18.28.0/31" }
+  - { src_node: PEAGG5_R18 , dst_node: PRE2_R29 , src_intf: ge-0/0/7 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.18.29.0/31" }
+
+  - { src_node: IGW1_R19 , dst_node: IGWRR1_R34 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.19.34.0/31" }
+  - { src_node: IGW1_R19 , dst_node: IGWRR1_R35 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.19.35.0/31" }
+
+  - { src_node: IGW1_R20 , dst_node: IGWRR1_R34 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.20.34.0/31" }
+  - { src_node: IGW1_R20 , dst_node: IGWRR1_R35 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.20.35.0/31" }
+
+  - { src_node: IGW2_R21 , dst_node: IGWRR1_R34 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.21.34.0/31" }
+  - { src_node: IGW2_R21 , dst_node: IGWRR1_R35 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.21.35.0/31" }
+
+  - { src_node: IGW2_R22 , dst_node: IGWRR1_R34 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.22.34.0/31" }
+  - { src_node: IGW2_R22 , dst_node: IGWRR1_R35 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.22.35.0/31" }
+
+  - { src_node: ABR5_R37 , dst_node: ABR2_R38 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.37.38.0/31" }
+  - { src_node: ABR4_R36 , dst_node: ABR2_R38 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.37.38.0/31" }
+
+  - { src_node: TELCOGW1_R39 , dst_node: dc1_spine1 , src_intf: ge-0/0/2 ,dst_intf: xe-0/0/0 , p2p_subnet: "192.39.1.0/31" }
+  - { src_node: TELCOGW1_R39 , dst_node: dc1_spine2 , src_intf: ge-0/0/3 ,dst_intf: xe-0/0/0 , p2p_subnet: "192.39.2.0/31" }
+
+  - { src_node: TELCOGW1_R40 , dst_node: dc1_spine1 , src_intf: ge-0/0/2 ,dst_intf: xe-0/0/1 , p2p_subnet: "192.40.1.0/31" }
+  - { src_node: TELCOGW1_R40 , dst_node: dc1_spine2 , src_intf: ge-0/0/3 ,dst_intf: xe-0/0/1 , p2p_subnet: "192.40.2.0/31" }
+
+  - { src_node: dc1_spine1 , dst_node: dc1_leaf1 , src_intf: xe-0/0/2 ,dst_intf: xe-0/0/1 , p2p_subnet: "192.1.1.0/31" }
+  - { src_node: dc1_spine1 , dst_node: dc1_leaf2 , src_intf: xe-0/0/3 ,dst_intf: xe-0/0/1 , p2p_subnet: "192.1.2.0/31" }
+  - { src_node: dc1_spine1 , dst_node: dc1_leaf3 , src_intf: xe-0/0/4 ,dst_intf: xe-0/0/1 , p2p_subnet: "192.1.3.0/31" }
+
+  - { src_node: dc1_spine2 , dst_node: dc1_leaf1 , src_intf: xe-0/0/2 ,dst_intf: xe-0/0/2 , p2p_subnet: "192.2.1.0/31" }
+  - { src_node: dc1_spine2 , dst_node: dc1_leaf2 , src_intf: xe-0/0/3 ,dst_intf: xe-0/0/2 , p2p_subnet: "192.2.2.0/31" }
+  - { src_node: dc1_spine2 , dst_node: dc1_leaf3 , src_intf: xe-0/0/4 ,dst_intf: xe-0/0/2 , p2p_subnet: "192.2.3.0/31" }

@@ -43,7 +43,14 @@ pip install -r requirements.txt
 cat << 'EOF' > /root/telco_lab.env 
 for key in $( set | awk '{FS="="}  /^eve_/ {print $1}' ); do unset $key ; done
 export eve_ip=192.168.100.252 #<-- Provide here the eve_ip address
-export eve_lab_name=TelcoCloud-Upgrade.unl #<-- provide here the lab name
+export eve_user=admin
+export eve_password=eve
+export eve_lab_name=5G_Core_in_CSP.unl
+export eve_lab_cnx_file="/root/5G_Core_in_CSP_CNX.yml"
+
+#export eve_nodes_spec="linux1:30G,linux2:40G"
+#export eve_nodes_spec="ubuntu_vm:10G,ubuntu2:10G,CentOS1:10G"
+
 EOF
 
 source /root/telco_lab.env
@@ -66,13 +73,17 @@ Two operations are currently supported
 
 ```bash
 python evetools.py lab -h
-usage: eve lab [-h] [--describe] [--action {start,stop,list}] [--nodes NODES]
+usage: eve lab [-h] [--describe | --rack_and_stack | --cnx_body CNX_BODY | --de_rack_and_stack | --get_ansible_data] [--action {start,stop,list,init}] [--nodes NODES]
 
 options:
   -h, --help            show this help message and exit
   --describe            Describe the lab
+  --rack_and_stack      Connect the nodes with each other according to the topology file stored in env variable eve_lab_cnx_file
+  --cnx_body CNX_BODY   provide the body of the connection request
+  --de_rack_and_stack   disconnect the nodes from each other according to the topology file stored in env variable eve_lab_cnx_file
+  --get_ansible_data    Get the data required by ansible playbooks to configure Day1 according to the topology file stored in env variable eve_lab_cnx_file
 
-  --action {start,stop,list}
+  --action {start,stop,list,init}
                         Do operation over nodes
   --nodes NODES         list of nodes with comma separated
 ```
@@ -109,23 +120,102 @@ python evetools.py lab --action start
 
 
 
-
-
 **Stop some nodes** (omit `**--nodes**` to stop all of them)
 
 ```bash
 python evetools.py lab --action stop --nodes issu-0,issu-1
 ```
 
-
-
 ![image-20220202172400508](README.assets/image-20220202172400508.png)
 
+**[new] Rack and Stack nodes**
+
+```sh
+python evetools.py lab --rack_and_stack
+```
+
+This operation will read the connection file defined in lab env `eve_lab_cnx_file` (Please see file
+named `5G_Core_in_CSP_CNX.yml` for an example of connection) and will connect them according to the cable plan. Very
+useful for architects exploring new design patterns or testing dramatic network changes. This operation is *idempotent*
+. meaning you can run it multiple times and you will get the same result at the end.
+
+Please see the below demo fro more infomration
+
+*Video*
+
+```less
+[
+
+<
+img src
+
+=
+"https://img.youtube.com/vi/0zVloOPgIFk/maxresdefault.jpg"
+width
+
+=
+"60%"
+>
+
+]
+(
+https:
+
+//youtu.be/0zVloOPgIFk)
+```
+
+*CLI*
+
+![image-20220428070102914](README.assets/image-20220428070102914.png)
+
+*Topology **before** the racking and stacking connection*
+
+![eve_1_98](README.assets/eve_1_98.png)
+
+*Topology **after** the racking and stacking connection*
+
+![image-20220428070317418](README.assets/image-20220428070317418.png)
+
+
+
+> [1] Please note the operation takes some time due to EVE-NG backend validation
+
+
+
+> [2] Important: Please don't login to EVE-NG GUI until this operation is finished to avoid interrupting the API
 
 
 
 
 
+**[new] Connect only one cable**
+
+```sh
+python evetools.py lab '{json_payload}'
+
+
+EX:
+python evetools.py lab --cnx_body '{ "src_node": "IGW2_R21" , "dst_node": "IGWRR1_R34" , "src_intf": "ge-0/0/2" ,"dst_intf": "ge-0/0/2"}'
+```
+
+This feature is a subset for the previous feature and will only connect two nodes with a single connection. useful for
+adding missing connections without need to repeat pushing the full cable plan one more time.
+
+**[new] De-Rack and Stack nodes**
+
+```sh
+python evetools.py lab --de_rack_and_stack
+```
+
+The opposite of previous feature, obviously!. it will remove the disconnect the nodes from each other this time
+
+**[new] Get Ansible Data**
+
+To be explained
+
+**[new] Adjust Qcow2 VM size**
+
+To be explained
 
 ## Snapshot operations
 
@@ -148,8 +238,6 @@ options:
 
 
 
-
-
 **Listing Snapshots**
 
 ```sh
@@ -162,8 +250,6 @@ python evetools.py snapshot --list
 
 
 
-
-
 **Creating new snapshot**
 
 ```bash
@@ -171,8 +257,6 @@ python evetools.py snapshot --ops create --snapshot test_the_snapshoting
 ```
 
 ![image-20220202172912424](README.assets/image-20220202172912424.png)
-
-
 
 
 
