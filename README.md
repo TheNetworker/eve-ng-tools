@@ -92,7 +92,7 @@ options:
 
 
 
-**Describe Lab**
+**[1] Describe Lab**
 
 ```bash
 python evetools.py lab --describe 
@@ -102,35 +102,23 @@ python evetools.py lab --describe
 
 ![image-20220202172227058](README.assets/image-20220202172227058.png)
 
-
-
-
-
-**Start all nodes in the lab**
+**[2] Start all nodes in the lab**
 
 ```bash
 python evetools.py lab --action start
 ```
 
-
-
 ![image-20220202172410929](README.assets/image-20220202172410929.png)
 
-
-
-
-
-**Stop some nodes** (omit `**--nodes**` to stop all of them)
+**[3] Stop some nodes** (omit `**--nodes**` to stop all of them)
 
 ```bash
 python evetools.py lab --action stop --nodes issu-0,issu-1
 ```
 
-
-
 ![image-20220202172400508](README.assets/image-20220202172400508.png)
 
-**[new] Rack and Stack nodes**
+**[new] [4] Rack and Stack nodes**
 
 ```sh
 python evetools.py lab --rack_and_stack
@@ -143,9 +131,9 @@ useful for architects exploring new design patterns or testing dramatic network 
 
 Please see the below demo fro more infomration
 
-*Video*
+*Watch Video Demo*
 
-[<img src="README.assets/maxresdefault-20220428072804409.jpg" width="60%">](https://youtu.be/0zVloOPgIFk)
+[![image-20220428073147098](README.assets/image-20220428073147098.png)](https://youtu.be/0zVloOPgIFk)
 
 *CLI*
 
@@ -154,6 +142,8 @@ Please see the below demo fro more infomration
 *Topology **before** the racking and stacking connection*
 
 ![eve_1_98](README.assets/eve_1_98.png)
+
+
 
 *Topology **after** the racking and stacking connection*
 
@@ -171,7 +161,7 @@ Please see the below demo fro more infomration
 
 
 
-**[new] Connect only one cable**
+**[new] [5] Connect only one cable**
 
 ```sh
 python evetools.py lab '{json_payload}'
@@ -184,7 +174,7 @@ python evetools.py lab --cnx_body '{ "src_node": "IGW2_R21" , "dst_node": "IGWRR
 This feature is a subset for the previous feature and will only connect two nodes with a single connection. useful for
 adding missing connections without need to repeat pushing the full cable plan one more time.
 
-**[new] De-Rack and Stack nodes**
+**[new] [6] De-Rack and Stack nodes**
 
 ```sh
 python evetools.py lab --de_rack_and_stack
@@ -192,13 +182,13 @@ python evetools.py lab --de_rack_and_stack
 
 The opposite of previous feature, obviously!. it will remove the disconnect the nodes from each other this time
 
-**[new] Get Ansible Data**
+**[new] [7] Get Ansible Data**
 
-To be explained
+To be explained later
 
-**[new] Adjust Qcow2 VM size**
+**[new] [8] Adjust Qcow2 VM size**
 
-To be explained
+To be explained later
 
 ## Snapshot operations
 
@@ -217,11 +207,7 @@ options:
   --nodes NODES         list of nodes with comma separated
 ```
 
-
-
-
-
-**Listing Snapshots**
+**[1] Listing Snapshots**
 
 ```sh
 python evetools.py snapshot --list
@@ -229,11 +215,7 @@ python evetools.py snapshot --list
 
 ![image-20220202172937514](README.assets/image-20220202172937514.png)
 
-
-
-
-
-**Creating new snapshot**
+**[2] Creating new snapshot**
 
 ```bash
 python evetools.py snapshot --ops create --snapshot test_the_snapshoting
@@ -241,27 +223,15 @@ python evetools.py snapshot --ops create --snapshot test_the_snapshoting
 
 ![image-20220202172912424](README.assets/image-20220202172912424.png)
 
-
-
-
-
-**Deleting snapshots**
+**[3] Deleting snapshots**
 
 ```bash
 python evetools.py snapshot --ops delete --snapshot test_the_snapshoting
 ```
 
-
-
 ![image-20220202172920017](README.assets/image-20220202172920017.png)
 
-
-
-
-
-
-
-**Reverting  the snapshot**
+**[4] Reverting the snapshot**
 
 ```bash
 python evetools.py snapshot --ops revert --snapshot test_the_snapshoting
