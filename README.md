@@ -126,6 +126,8 @@ python evetools.py lab --action start
 python evetools.py lab --action stop --nodes issu-0,issu-1
 ```
 
+
+
 ![image-20220202172400508](README.assets/image-20220202172400508.png)
 
 **[new] Rack and Stack nodes**
@@ -143,26 +145,7 @@ Please see the below demo fro more infomration
 
 *Video*
 
-```less
-[
-
-<
-img src
-
-=
-"https://img.youtube.com/vi/0zVloOPgIFk/maxresdefault.jpg"
-width
-
-=
-"60%"
->
-
-]
-(
-https:
-
-//youtu.be/0zVloOPgIFk)
-```
+[<img src="README.assets/maxresdefault-20220428072804409.jpg" width="60%">](https://youtu.be/0zVloOPgIFk)
 
 *CLI*
 
