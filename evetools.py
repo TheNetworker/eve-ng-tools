@@ -10,12 +10,14 @@ import time
 import argparse
 import yaml
 import netaddr
+import csv
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 debug = 0
 api_endpoints = {
 
     "login": "/api/auth/login",
+    "auth": "/api/auth",
     "labs": "/api/labs/{0}",
     "nodes": "/api/labs/{0}/nodes",
     "node": "/api/labs/{0}/nodes/{1}",
@@ -43,6 +45,8 @@ class eve_lab():
                                                                  -1] != 'unl' else eve_lab_name.strip()
         self.headers = {'Accept': 'application/json', "Content-Type": "application/json", }
         self.qemu_bin = "qemu-img"
+        self.lab_id = self._get(api_endpoints["labs"].format(self.eve_lab_name), ["id"], format="json")[0]['id']
+        self.user_tenant = self._get(api_endpoints["auth"], format="json")['data']['tenant']
 
     def update_cookies(func):
         @functools.wraps(func)
@@ -51,7 +55,7 @@ class eve_lab():
             self.eve_auth_data = {
                 'username': self.eve_user,
                 'password': self.eve_password,
-                'html5': "-1"
+                'html5': -1
             }
 
             auth = requests.post(url=self.eve_url + api_endpoints["login"],
@@ -73,21 +77,24 @@ class eve_lab():
 
         return wrapper_decorator
 
-    @property
-    def lab_id(self):
-        return self._get(api_endpoints["labs"].format(self.eve_lab_name),
-                         ["id"], format="json")[0]['id']
+    #   @property
+    #   def lab_id(self):
+    #       return self._get(api_endpoints["labs"].format(self.eve_lab_name),["id"], format="json")[0]['id']
+
+    # @property
+    # def user_tenant(self):
+    #     return self._get(api_endpoints["auth"], format="json")['data']['tenant']
 
     @property
     def lab_home_directory(self):
-
-        lab_dir = os.path.join("/opt/unetlab/tmp/0", self.lab_id)
-        try:
-            os.listdir(lab_dir)
-        except FileNotFoundError:
-            print("Lab home directory is not found on the server: {}".format(lab_dir))
-            exit(1)
-        return os.path.join("/opt/unetlab/tmp/0", self.lab_id)
+        # print(self.user_tenant)
+        lab_dir = os.path.join("/opt/unetlab/tmp/{0}".format(self.user_tenant), self.lab_id)
+        # try:
+        #     os.listdir(lab_dir)
+        # except FileNotFoundError:
+        #     print("Lab home directory is not found on the server: {}".format(lab_dir))
+        #     exit(1)
+        return lab_dir
 
     @update_cookies
     def _get(self, api_endpoint, fields=[], format="pretty"):
@@ -107,6 +114,7 @@ class eve_lab():
 
         if _.status_code == requests.codes.ok:
             self.data = _.json().get('data', None)
+            # pprint(self.data)
 
             if self.data:
                 if fields:
@@ -194,18 +202,25 @@ class eve_lab():
                                    format="json")
         self.nodes = []
         if include_qcow2:
-            for node_id in os.listdir(self.lab_home_directory):
+            the_dir = os.listdir(self.lab_home_directory)
+            for node_id in the_dir:
                 # TODO a bit slow, need to optimize it, may by with glob?
-                node_directory = os.path.join(self.lab_home_directory, node_id)
 
-                try:
-                    os.listdir(node_directory)
-                except FileNotFoundError:
-                    print("Node directory is not found on the server: {}".format(node_directory))
-                    exit(1)
+                # print("op1")
+                node_directory = f"{self.lab_home_directory}/{node_id}"
+                # print(node_directory)
+                # print("finish op1")
+                # try:
+                #    os.listdir(node_directory)
+                # except FileNotFoundError:
+                #    print("Node directory is not found on the server: {}".format(node_directory))
+                #    exit(1)
+
+                # print("Getting nodes")
                 node_qcow2_files = [os.path.join(node_directory, f) for f in os.listdir(node_directory) if
                                     f.endswith('.qcow2')]
 
+                # print("finish getting qcow2")
                 # expensive operation and might overwhelm the eve server, so it's better to move processing to python instead (took 24s vs 12s)
                 # node_dict = self._get(api_endpoint=api_endpoints["node"].format(self.eve_lab_name, node_id),
                 #                           fields=["name", "id", "template", "status", "image", "url", "cpu", "ram",
@@ -277,8 +292,8 @@ class eve_lab():
         print(self._get(api_endpoints["nodes"].format(self.eve_lab_name),
                         ["name", "id", "template", "status", "image", "url", "cpu", "ram", "ethernet", "firstmac"],
                         format="pretty"))
-
-        # print(self._get(api_endpoints["networks"].format(lab_name),["name","id","type","count","linkstyle"],format="pretty"))
+        #
+        # print(self._get(api_endpoints["networks"].format(self.eve_lab_name),["name","id","type","count","linkstyle"],format="pretty"))
 
         print(banner.format("Topology"))
         print(self._get(api_endpoints["topology"].format(self.eve_lab_name), ["source_node_name",
@@ -362,7 +377,7 @@ class eve_lab():
         else:
             return False, output_raw.stderr.decode("utf-8").strip()
 
-    def nodes_ops(self, ops, nodes="all", includes_qcow2=False):
+    def nodes_ops(self, ops, nodes="all", includes_qcow2=False, delay=0):
         stop = 0
         lab_nodes = self.get_nodes(include_qcow2=includes_qcow2)
         # pprint(lab_nodes)
@@ -385,17 +400,21 @@ class eve_lab():
             _ = [x.strip() for x in _]
             nodes_spec_list = [{"name": x.split(":")[0], "desired_size": x.split(":")[1]} for x in _]
             # print("nodes_spec_list: {}".format(nodes_spec_list))
-
+            # print("temp_dict_list: {}".format(temp_dict))
             for spec in nodes_spec_list:
                 for index, node in enumerate(temp_dict):
+                    # print(spec["name"])
+                    # print(node["name"])
+                    # print("------------")
                     if node["name"] == spec["name"]:
                         final_list_of_nodes[index]["desired_size"] = spec["desired_size"]
                         # pprint(node)
+                        # print("---break")
                         break  # we found it, no need to continue
 
         # pprint(final_list_of_nodes)
         for node in final_list_of_nodes:
-            print("->Applying operation: {} on node: {}".format(ops, node["name"]))
+            print("->Applying operation: '{}' on node: '{}'".format(ops, node["name"]))
             if ops == "start" and node["status"] != stop:
                 print(" Node already started!")
 
@@ -431,9 +450,13 @@ class eve_lab():
                             print(output)
                             exit(1)
                         break
-
+            elif ops == "get_console_port":
+                print("{}".format(node["url"].split(":")[-1]))
+                break
             else:
                 url = api_endpoints["node"].format(self.eve_lab_name, node["id"]) + "/{}".format(ops)
+                if delay:
+                    time.sleep(delay)
                 if ops == "stop":
                     url = url + "/stopmode=3"  # required for eve-ng pro only
                 self._get(api_endpoint=url)
@@ -508,13 +531,14 @@ class eve_lab():
             mgmt_subnet = topology["mgmt_subnet"]  # better to fail if mgmt_subnet is not defined
             igp_protocol = topology.get("igp", "")
             network_nodes = topology.get("networks_nodes", [])
+            vm_nodes = topology.get("vms", [])
             connections = topology.get("connections", [])
             ip_mgmt_subnet = netaddr.IPNetwork(mgmt_subnet)
 
         # Generate the output for the vars_all_pxe_ztp_hosts in the ansible directory (Day0)
         print(
             '\n\n->Day0: Please add the following output to "vars_all_pxe_ztp_hosts.yaml" inside your ansible directory')
-        print(self.eve_lab_name.split(".unl")[0] + ":")
+        print("lab_" + self.eve_lab_name.split(".unl")[0] + ":")
         print("  network_nodes:")
 
         lab_nodes = self.get_nodes(include_qcow2=False)
@@ -547,7 +571,10 @@ class eve_lab():
             tmp = "{:0>3}{:0>3}{:0>3}{:0>3}".format(*node["loopback"].split("."))
 
             if igp_protocol == "isis":
-                lo_iso_id = "49.0000.{}.{}.{}.00".format(tmp[0:4], tmp[4:8], tmp[8:12])
+                isis_area = "49.0000"
+                if node["role"] == "peagg" or node["role"] == "preagg":
+                    isis_area = "49.0001"  # instruct the L1L2 router to advertise the attached-bit (i.e. advertise the default-route) for seamless MPLS architecture
+                lo_iso_id = "{}.{}.{}.{}.00".format(isis_area, tmp[0:4], tmp[4:8], tmp[8:12])
                 isis[node["name"]] = {"lo_iso_id": lo_iso_id}
 
         # Generate the output for the lab_vars in the lab directory (Day1)
@@ -592,15 +619,22 @@ class eve_lab():
             for k in isis:
                 print(" {}:".format(k))
                 print("  lo_iso_id: {}".format(isis[k]["lo_iso_id"]))
-                print("  level: 2")
+
+                # if node["role"] == "preagg" or node["role"] == "peagg":
+                #     print(node)
+                #     print("  level: 1")
+                # else:
+                #     print("  level: 2")
 
         # print(yaml.dump(p2p_ip,  default_flow_style=False, allow_unicode=True, sort_keys=True, indent=2,explicit_start=False,default_style='',width=1000))
 
-    def rack_and_stack_nodes_in_topology(self, file_path, ops="add", cnx_body=""):  # Day0
+    def rack_and_stack_nodes_in_topology(self, file_path, ops="add", cnx_body="", flavor="", transform=""):  # Day0
         print("->working on file path: {}".format(file_path))
         print(
-            "->Important: Please don't login to EVE-NG GUI until this operation is finished to avoid interrupting the API")
+            "->Important [1]: Please don't login to EVE-NG GUI until this operation is finished to avoid interrupting the API")
 
+        print(
+            "->Important [2]: This method is not intended to be used for connecting nodes with bridges. Only between VM nodes")
         if cnx_body:
             # '{ "src_node": "IGW2_R21" , "dst_node": "IGWRR1_R34" , "src_intf": "ge-0/0/2" ,"dst_intf": "ge-0/0/2"}'
             cnx_body = json.loads(cnx_body)
@@ -613,9 +647,42 @@ class eve_lab():
                 print("  Error: file path: {} does not exist".format(file_path))
                 exit(1)
 
-            with open(file_path, "r", encoding='utf8') as stream:
-                topology = yaml.safe_load(stream)
-                connections = topology.get("connections", [])
+            if flavor == "apstra":
+                with open(file_path, "r", encoding='utf8') as csv_file:
+                    csv_reader = csv.reader(csv_file, delimiter=',')
+                    line_count = 0
+                    connections = []
+                    if transform:
+                        original_intf_prefix = transform.split("_to_")[0]
+                        new_intf_prefix = transform.split("_to_")[1]
+                    for row in csv_reader:
+                        connection = {}
+                        if line_count == 0:
+                            # print(f'Column names are {", ".join(row)}')
+                            line_count += 1
+                        else:
+                            src_node = row[2].strip()
+                            src_intf = row[5].strip().replace(original_intf_prefix, new_intf_prefix)
+                            dst_node = row[7].strip()
+                            dst_intf = row[10].strip().replace(original_intf_prefix, new_intf_prefix)
+                            connection["src_node"] = src_node
+                            connection["src_intf"] = src_intf
+                            connection["dst_node"] = dst_node
+                            connection["dst_intf"] = dst_intf
+                            if src_node and src_intf and dst_node and dst_intf:
+                                connections.append(connection)
+                            line_count += 1
+                    #         print('->operating over nodes: "{}" and "{}" over port:"{}" and port:"{}"'.format(src_node, dst_node, src_intf, dst_intf))
+                    # print(f'Processed {line_count} lines.')
+
+                # print(connections)
+                # exit(0)
+
+            else:
+                with open(file_path, "r", encoding='utf8') as stream:
+                    topology = yaml.safe_load(stream)
+                    connections = topology.get("connections", [])
+
             for num, connection in enumerate(connections):
                 print('->[{}/{}]operating over nodes: "{}" and "{}" over port:"{}" and port:"{}"'.format(
                     num + 1,
@@ -681,10 +748,12 @@ if __name__ == '__main__':
                         required=False,
                         help="Connect the nodes with each other according to the topology file stored in env variable eve_lab_cnx_file",
                         )
+
     lab_g1.add_argument("--cnx_body",
                         required=False,
                         help="provide the body of the connection request",
                         )
+
     lab_g1.add_argument("--de_rack_and_stack",
                         action="store_true",
                         required=False,
@@ -699,7 +768,7 @@ if __name__ == '__main__':
 
     lab_g2 = lab_ops.add_argument_group()
     lab_g2.add_argument("--action",
-                        choices=["start", "stop", "list", "init"],
+                        choices=["start", "stop", "list", "init", "get_console_port"],
                         required=False,
                         help="Do operation over nodes",
                         )
@@ -709,6 +778,17 @@ if __name__ == '__main__':
                         help="list of nodes with comma separated",
                         )
 
+    lab_g2.add_argument("--flavor",
+                        required=False,
+                        help="provide the flavor of the lab mgmt solution",
+                        choices=['apstra']
+                        )
+
+    lab_g2.add_argument("--delay",
+                        required=False,
+                        help="provide the delay in seconds between each node operation",
+                        default=0
+                        )
     snap_g1 = snapshot_ops.add_argument_group()
     snap_g1.add_argument("--list", action="store_true", required=False, help="list a snapshot")
 
@@ -724,7 +804,13 @@ if __name__ == '__main__':
         if args.describe:
             print(eve_ops.describe())
         elif args.rack_and_stack:
-            eve_ops.rack_and_stack_nodes_in_topology(ops="add", file_path=eve_lab_cnx_file)
+            if args.flavor == 'apstra':
+                eve_ops.rack_and_stack_nodes_in_topology(ops="add", file_path=eve_lab_cnx_file, flavor='apstra',
+                                                         transform='eth_to_ge-0/0/')
+            else:
+                eve_ops.rack_and_stack_nodes_in_topology(ops="add", file_path=eve_lab_cnx_file)
+
+
         elif args.cnx_body:
             eve_ops.rack_and_stack_nodes_in_topology(ops="add", file_path=eve_lab_cnx_file, cnx_body=args.cnx_body)
 
@@ -733,20 +819,21 @@ if __name__ == '__main__':
 
         elif args.get_ansible_data:
             eve_ops.get_ansible_data(file_path=eve_lab_cnx_file)
+
         elif args.action:
             if args.action == "list":
                 print(eve_ops.describe())
             elif args.action == "init":
                 eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=True)
             else:
-                eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=False)
+                eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=False, delay=int(args.delay))
 
     elif args.operation == "snapshot":
         if args.list:
             print(eve_ops.list_snapshots())
         elif args.ops:
             if args.snapshot:
-                eve_ops.snapshot_ops(snapshotname=args.snapshot, ops=args.ops)
+                eve_ops.snapshot_ops(snapshotname=args.snapshot, ops=args.ops, nodes=args.nodes)
             else:
                 print("Please provide snapshot name! (--snapshot)")
                 exit(1)
@@ -757,8 +844,11 @@ eve-tools lab --describe
 eve-tools lab --action start 
 eve-tools lab --action stop --nodes issu-0,issu-1
 
+eve-tools lab --action init
+
 eve-tools lab --get_ansible_data
 eve-tools lab --rack_and_stack
+eve-tools lab --rack_and_stack --flavor apstra
 eve-tools lab --cnx_body '{json_payload}'
 eve-tools lab --de_rack_and_stack
 

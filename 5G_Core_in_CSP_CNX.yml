@@ -1,3 +1,94 @@
+mgmt_subnet: 10.99.100.0/24
+igp: isis
+networks_nodes:
+  # COREs
+  - { name: CORE1_R1 , role: core , loopback: 10.76.34.1  , node_that_will_do_pxe: VCP_R1 }
+  - { name: CORE1_R2 , role: core , loopback: 10.76.34.2 , node_that_will_do_pxe: VCP_R2 }
+
+  - { name: CORE2_R3 , role: core , loopback: 10.76.34.3 , node_that_will_do_pxe: VCP_R3 }
+  - { name: CORE2_R4 , role: core , loopback: 10.76.34.4 , node_that_will_do_pxe: VCP_R4 }
+
+  - { name: CORE3_R5 , role: core , loopback: 10.76.34.5 , node_that_will_do_pxe: VCP_R5 }
+  - { name: CORE3_R6 , role: core , loopback: 10.76.34.6 , node_that_will_do_pxe: VCP_R6 }
+
+  - { name: CORE4_R7 , role: core , loopback: 10.76.34.7 , node_that_will_do_pxe: VCP_R7 }
+  - { name: CORE4_R8 , role: core , loopback: 10.76.34.8 , node_that_will_do_pxe: VCP_R8 }
+
+  # PE_AGGs
+  - { name: PEAGG1_R9 , role: peagg , loopback: 10.76.34.9 , node_that_will_do_pxe: VCP_R9 }
+  - { name: PEAGG1_R10 , role: peagg , loopback: 10.76.34.10 , node_that_will_do_pxe: VCP_R10 }
+
+  - { name: PEAGG2_R11 , role: peagg , loopback: 10.76.34.11 , node_that_will_do_pxe: VCP_R11 }
+  - { name: PEAGG2_R12 , role: peagg , loopback: 10.76.34.12 , node_that_will_do_pxe: VCP_R12 }
+
+  - { name: PEAGG3_R13 , role: peagg , loopback: 10.76.34.13 , node_that_will_do_pxe: VCP_R13 }
+  - { name: PEAGG3_R14 , role: peagg , loopback: 10.76.34.14 , node_that_will_do_pxe: VCP_R14 }
+
+  - { name: PEAGG4_R15 , role: peagg , loopback: 10.76.34.15 , node_that_will_do_pxe: VCP_R15 }
+  - { name: PEAGG4_R16 , role: peagg , loopback: 10.76.34.16 , node_that_will_do_pxe: VCP_R16 }
+
+  - { name: PEAGG5_R17 , role: peagg , loopback: 10.76.34.17 , node_that_will_do_pxe: VCP_R17 }
+  - { name: PEAGG5_R18 , role: peagg , loopback: 10.76.34.18 , node_that_will_do_pxe: VCP_R18 }
+
+  # IGWs
+  - { name: IGW1_R19 , role: igw , loopback: 10.76.34.19 , node_that_will_do_pxe: VCP_R19 }
+  - { name: IGW1_R20 , role: igw , loopback: 10.76.34.20 , node_that_will_do_pxe: VCP_R20 }
+
+  - { name: IGW2_R21 , role: igw , loopback: 10.76.34.21 , node_that_will_do_pxe: VCP_R21 }
+  - { name: IGW2_R22 , role: igw , loopback: 10.76.34.22 , node_that_will_do_pxe: VCP_R22 }
+
+  - { name: IGW3_R23 , role: igw , loopback: 10.76.34.23 , node_that_will_do_pxe: VCP_R23 }
+  - { name: IGW3_R24 , role: igw , loopback: 10.76.34.24 , node_that_will_do_pxe: VCP_R24 }
+
+  # PRE_AGGs
+  - { name: PRE1_R25 , role: preagg , loopback: 10.76.34.25 , node_that_will_do_pxe: VCP_R25 }
+  - { name: PRE1_R26 , role: preagg , loopback: 10.76.34.26 , node_that_will_do_pxe: VCP_R26 }
+
+  - { name: PRE1_R27 , role: preagg , loopback: 10.76.34.27 , node_that_will_do_pxe: VCP_R27 }
+
+  - { name: PRE2_R28 , role: preagg , loopback: 10.76.34.28 , node_that_will_do_pxe: VCP_R28 }
+  - { name: PRE2_R29 , role: preagg , loopback: 10.76.34.29 , node_that_will_do_pxe: VCP_R29 }
+
+ # MPLSRRs
+  - { name: MPLSRR1_R30 , role: mplsrr , loopback: 10.76.34.30 , node_that_will_do_pxe: VCP_R30 }
+  - { name: MPLSRR1_R31 , role: mplsrr , loopback: 10.76.34.31 , node_that_will_do_pxe: VCP_R31 }
+
+  - { name: MPLSRR2_R32 , role: mplsrr , loopback: 10.76.34.32 , node_that_will_do_pxe: VCP_R32 }
+  - { name: MPLSRR2_R33 , role: mplsrr , loopback: 10.76.34.33 , node_that_will_do_pxe: VCP_R33 }
+
+
+# IGWRRs
+  - { name: IGWRR1_R34 , role: igwrr , loopback: 10.76.34.34 , node_that_will_do_pxe: VCP_R34 }
+  - { name: IGWRR1_R35 , role: igwrr , loopback: 10.76.34.35 , node_that_will_do_pxe: VCP_R35 }
+
+# ABRs
+  - { name: ABR4_R36 , role: abr , loopback: 10.76.34.36 , node_that_will_do_pxe: VCP_R36 }
+  - { name: ABR5_R37 , role: abr , loopback: 10.76.34.37 , node_that_will_do_pxe: VCP_R37 }
+
+
+
+# IPFabric
+  - { name: TELCOGW1_R39 , role: telcogw , loopback: 10.76.34.39 , node_that_will_do_pxe: VCP_R39 }
+  - { name: TELCOGW1_R40 , role: telcogw , loopback: 10.76.34.40 , node_that_will_do_pxe: VCP_R40 }
+
+  - { name: dc1_spine1 , role: spine , loopback: 10.76.34.41 , node_that_will_do_pxe: dc1_spine1 }
+  - { name: dc1_spine2 , role: spine , loopback: 10.76.34.42 , node_that_will_do_pxe: dc1_spine2 }
+
+  - { name: dc1_leaf1 , role: leaf , loopback: 10.76.34.51 , node_that_will_do_pxe: dc1_leaf1 }
+  - { name: dc1_leaf2 , role: leaf , loopback: 10.76.34.52 , node_that_will_do_pxe: dc1_leaf2 }
+  - { name: dc1_leaf3 , role: leaf , loopback: 10.76.34.53 , node_that_will_do_pxe: dc1_leaf3 }
+
+
+# CSP2
+  - { name: CSP2_ABR1_R38 , role: abr , loopback: 10.76.34.38 , node_that_will_do_pxe: VCP_R38 }
+  - { name: CSP2_MPLSRR1_R99 , role: mplsrr , loopback: 10.76.34.99 , node_that_will_do_pxe: VCP_R99 }
+  - { name: CSP2_PEAGG1_R100 , role: peagg , loopback: 10.76.34.100 , node_that_will_do_pxe: VCP_R100 }
+  - { name: CSP2_CORE1_R101 , role: core , loopback: 10.76.34.101 , node_that_will_do_pxe: VCP_R101 }
+
+
+vms:
+  - { name: eNodeB2 , role: abr , os_release: Ubuntu20, os_iso: ubuntu-20.04.4-live-server-amd64.iso }
+
 connections:
   - { src_node: CORE1_R1 , dst_node: CORE1_R2 , src_intf: ge-0/0/0 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.1.2.0/31" }
   - { src_node: CORE1_R1 , dst_node: CORE4_R7 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.1.7.0/31" }
@@ -112,8 +203,8 @@ connections:
   - { src_node: IGW2_R22 , dst_node: IGWRR1_R34 , src_intf: ge-0/0/2 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.22.34.0/31" }
   - { src_node: IGW2_R22 , dst_node: IGWRR1_R35 , src_intf: ge-0/0/3 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.22.35.0/31" }
 
-  - { src_node: ABR5_R37 , dst_node: ABR2_R38 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.37.38.0/31" }
-  - { src_node: ABR4_R36 , dst_node: ABR2_R38 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.37.38.0/31" }
+  - { src_node: ABR5_R37 , dst_node: CSP2_ABR1_R38 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.37.38.0/31" }
+  - { src_node: ABR4_R36 , dst_node: CSP2_ABR1_R38 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.37.38.0/31" }
 
   - { src_node: TELCOGW1_R39 , dst_node: dc1_spine1 , src_intf: ge-0/0/2 ,dst_intf: xe-0/0/0 , p2p_subnet: "192.39.1.0/31" }
   - { src_node: TELCOGW1_R39 , dst_node: dc1_spine2 , src_intf: ge-0/0/3 ,dst_intf: xe-0/0/0 , p2p_subnet: "192.39.2.0/31" }
@@ -128,3 +219,22 @@ connections:
   - { src_node: dc1_spine2 , dst_node: dc1_leaf1 , src_intf: xe-0/0/2 ,dst_intf: xe-0/0/2 , p2p_subnet: "192.2.1.0/31" }
   - { src_node: dc1_spine2 , dst_node: dc1_leaf2 , src_intf: xe-0/0/3 ,dst_intf: xe-0/0/2 , p2p_subnet: "192.2.2.0/31" }
   - { src_node: dc1_spine2 , dst_node: dc1_leaf3 , src_intf: xe-0/0/4 ,dst_intf: xe-0/0/2 , p2p_subnet: "192.2.3.0/31" }
+
+# Customer Edge
+  - { src_node: PEAGG1_R9 , dst_node: CE1 , src_intf: ge-0/0/10 ,dst_intf: eth0 , p2p_subnet: "172.9.92.0/31" }
+  - { src_node: PEAGG1_R10 , dst_node: CE2 , src_intf: ge-0/0/10 ,dst_intf: eth0 , p2p_subnet: "172.10.91.0/31" }
+  - { src_node: PEAGG2_R12 , dst_node: CE3 , src_intf: ge-0/0/10 ,dst_intf: eth0 , p2p_subnet: "172.12.93.0/31" }
+  - { src_node: PEAGG5_R18 , dst_node: CE4 , src_intf: ge-0/0/10 ,dst_intf: eth0 , p2p_subnet: "172.18.98.0/31" }
+  - { src_node: PEAGG4_R15 , dst_node: CE5 , src_intf: ge-0/0/10 ,dst_intf: eth0 , p2p_subnet: "172.25.94.0/31" }
+
+# Mobile Towers
+  - { src_node: PRE1_R27 , dst_node: eNodeB1 , src_intf: ge-0/0/8 ,dst_intf: eth0 , p2p_subnet: "172.27.95.0/31" }
+  - { src_node: PRE1_R25 , dst_node: eNodeB2 , src_intf: ge-0/0/8 ,dst_intf: eth0 , p2p_subnet: "172.25.97.0/31" }
+  - { src_node: PRE2_R28 , dst_node: eNodeB3 , src_intf: ge-0/0/8 ,dst_intf: eth0 , p2p_subnet: "172.28.96.0/31" }
+
+# CSP2
+  - { src_node: CSP2_CORE1_R101 , dst_node: CSP2_ABR1_R38 , src_intf: ge-0/0/0 ,dst_intf: ge-0/0/2 , p2p_subnet: "172.101.38.0/31" }
+  - { src_node: CSP2_CORE1_R101 , dst_node: CSP2_PEAGG1_R100 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/0 , p2p_subnet: "172.101.100.0/31" }
+  - { src_node: CSP2_MPLSRR1_R99 , dst_node: CSP2_PEAGG1_R100 , src_intf: ge-0/0/0 ,dst_intf: ge-0/0/1 , p2p_subnet: "172.99.100.0/31" }
+  - { src_node: CSP2_MPLSRR1_R99 , dst_node: CSP2_ABR1_R38 , src_intf: ge-0/0/1 ,dst_intf: ge-0/0/3 , p2p_subnet: "172.99.38.0/31" }
+  - { src_node: CSP2_PEAGG1_R100 , dst_node: CSP2_CE1 , src_intf: ge-0/0/2 ,dst_intf: eth0 , p2p_subnet: "172.100.105.0/31" }

@@ -1,10 +1,10 @@
 # eve-ng-tools
 
-EVE-NG tools, A Utility to make operations with EVE-NG more friendly. Also it support different snapshot operations with same style as Libvirt/KVM
+EVE-NG tools, A Utility to make operations with EVE-NG more friendly. Also it supports different snapshot operations with same style as Libvirt/KVM.
 
 
 
-Also, this tool could be used to assist in migration from KVM to EVE-NG. Full details are described here\
+Also, this tool could be used to assist in migration from KVM to EVE-NG. Full details are described in the following blog post
 
 https://basimaly.wordpress.com/2022/02/01/migrating-from-kvm-to-eve-ng/
 
@@ -19,6 +19,15 @@ The tool need to be hosted on the eve-ng server since it use some local commands
 ## Create virtualenv
 
 ```bash
+
+# ubuntu
+sudo apt-get install python3-pip
+sudo pip3 install virtualenv
+
+# RHEL 7/CentOS 8
+sudo yum install python-virtualenv
+
+# install virtualenv
 virtualenv --python /usr/bin/python3.10  .venv # use python version > 3.5
 source .venv/bin/activate
 ```
@@ -43,7 +52,7 @@ pip install -r requirements.txt
 cat << 'EOF' > /root/telco_lab.env 
 for key in $( set | awk '{FS="="}  /^eve_/ {print $1}' ); do unset $key ; done
 export eve_ip=192.168.100.252 #<-- Provide here the eve_ip address
-export eve_user=admin
+export eve_user=admin #<-- Provide here your username
 export eve_password=eve
 export eve_lab_name=5G_Core_in_CSP.unl
 export eve_lab_cnx_file="/root/5G_Core_in_CSP_CNX.yml"
@@ -67,7 +76,7 @@ Two operations are currently supported
 
 
 
-
+ 
 
 ## Lab Operations: 
 
@@ -88,7 +97,7 @@ options:
   --nodes NODES         list of nodes with comma separated
 ```
 
-
+ 
 
 
 
@@ -102,6 +111,8 @@ python evetools.py lab --describe
 
 ![image-20220202172227058](README.assets/image-20220202172227058.png)
 
+  
+
 **[2] Start all nodes in the lab**
 
 ```bash
@@ -110,6 +121,16 @@ python evetools.py lab --action start
 
 ![image-20220202172410929](README.assets/image-20220202172410929.png)
 
+  
+
+**[2-1] Start all nodes in the lab with a `delay` of 10 seconds to avoid CPU hogging** 
+
+```bash
+python evetools.py lab --action start --delay 10
+```
+
+  
+
 **[3] Stop some nodes** (omit `**--nodes**` to stop all of them)
 
 ```bash
@@ -117,6 +138,8 @@ python evetools.py lab --action stop --nodes issu-0,issu-1
 ```
 
 ![image-20220202172400508](README.assets/image-20220202172400508.png)
+
+ 
 
 **[new] [4] Rack and Stack nodes**
 
@@ -139,29 +162,29 @@ Please see the below demo fro more infomration
 
 ![image-20220428070102914](README.assets/image-20220428070102914.png)
 
-
+ 
 
 *Topology **before** the racking and stacking connection*
 
 ![eve_1_98](README.assets/eve_1_98.png)
 
-
+ 
 
 *Topology **after** the racking and stacking connection*
 
 ![image-20220428070317418](README.assets/image-20220428070317418.png)
 
-
+ 
 
 > [1] Please note the operation takes some time due to EVE-NG backend validation
 
-
+ 
 
 > [2] Important: Please don't login to EVE-NG GUI until this operation is finished to avoid interrupting the API
 
 
 
-
+ 
 
 **[new] [5] Connect only one cable**
 
@@ -176,6 +199,8 @@ python evetools.py lab --cnx_body '{ "src_node": "IGW2_R21" , "dst_node": "IGWRR
 This feature is a subset for the previous feature and will only connect two nodes with a single connection. useful for
 adding missing connections without need to repeat pushing the full cable plan one more time.
 
+ 
+
 **[new] [6] De-Rack and Stack nodes**
 
 ```sh
@@ -184,13 +209,55 @@ python evetools.py lab --de_rack_and_stack
 
 The opposite of previous feature, obviously!. it will remove the disconnect the nodes from each other this time
 
+ 
+
 **[new] [7] Get Ansible Data**
 
 To be explained later
 
+ 
+
 **[new] [8] Adjust Qcow2 VM size**
 
 To be explained later
+
+ 
+
+**[new] [9] Support reading the connection details from Juniper Apstra Cabling Map**
+
+To be explained later
+
+ 
+
+**[new] [10] Get the console port**
+
+```bash
+python evetools.py lab --action get_console_port --nodes dcn1-leaf1   #node need to be powered-on
+```
+
+
+
+![image-20231008100343403](./README.assets/image-20231008100343403.png)
+
+
+
+This could be used later in any EXPECT based script to configure the day0 configuration as in below
+
+```bash
+./eve_expect.sh vmx $(python evetools.py lab --action get_console_port --nodes vMX-VCP49 | grep -v '\->') 10.99.100.151/24
+```
+
+
+
+![image-20231008101741544](./README.assets/image-20231008101741544.png)
+
+ 
+
+**The Result**
+
+![image-20231008101830250](./README.assets/image-20231008101830250.png)
+
+ 
 
 ## Snapshot operations
 
@@ -209,6 +276,8 @@ options:
   --nodes NODES         list of nodes with comma separated
 ```
 
+  
+
 **[1] Listing Snapshots**
 
 ```sh
@@ -216,6 +285,8 @@ python evetools.py snapshot --list
 ```
 
 ![image-20220202172937514](README.assets/image-20220202172937514.png)
+
+  
 
 **[2] Creating new snapshot**
 
@@ -225,6 +296,8 @@ python evetools.py snapshot --ops create --snapshot test_the_snapshoting
 
 ![image-20220202172912424](README.assets/image-20220202172912424.png)
 
+  
+
 **[3] Deleting snapshots**
 
 ```bash
@@ -233,6 +306,8 @@ python evetools.py snapshot --ops delete --snapshot test_the_snapshoting
 
 ![image-20220202172920017](README.assets/image-20220202172920017.png)
 
+  
+
 **[4] Reverting the snapshot**
 
 ```bash
@@ -240,6 +315,8 @@ python evetools.py snapshot --ops revert --snapshot test_the_snapshoting
 ```
 
 ![image-20220202172904032](README.assets/image-20220202172904032.png)
+
+  
 
 ## Questions/Discussion
 
