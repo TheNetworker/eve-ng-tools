@@ -967,7 +967,7 @@ if __name__ == '__main__':
     eve_password = os.environ.get('eve_password', 'eve')
     eve_lab_name = os.environ.get('eve_lab_name', None)
     eve_lab_cnx_file = os.environ.get('eve_lab_cnx_file', None)
-    ignore_sat_check = False if os.environ.get('ignore_sat_check', None) == "False" else True
+    ignore_sat_check = False if os.environ.get('ignore_sat_check', "false").lower() == "false" else True
     # print(ignore_sat_check)
 
     eve_ops = eve_lab(eve_lab_name=eve_lab_name, eve_ip=eve_ip, eve_user=eve_user, eve_password=eve_password)
