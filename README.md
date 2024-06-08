@@ -55,7 +55,7 @@ export eve_user=admin #<-- Provide here your username
 export eve_password=eve
 export eve_lab_name=5G_Core_in_CSP.unl
 export eve_lab_cnx_file="/root/5G_Core_in_CSP_CNX.yml"
-
+export ignore_sat_check=False
 
 EOF
 
@@ -97,6 +97,16 @@ mkdir -p /root/sats/{1,2,3}
 # install the sshfs package on eve-ng master 
 sudo apt install sshfs -y
 
+# copy the root ssh id to satellite servers
+ssh-copy-id root@192.168.8.240
+ssh-copy-id root@192.168.8.230
+ssh-copy-id root@192.168.8.220
+
+# unmount directories if they're mounted previously
+umount /root/sats/1
+umount /root/sats/2
+umount /root/sats/3
+
 # remotely map the directory of sat1 (EX IP: 192.168.8.240)
 sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1
 
@@ -107,6 +117,14 @@ sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfil
 sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3
 
 ```
+
+
+
+> [!WARNING]
+>
+> You can temporarily set `export ignore_sat_check=True`  in the lab env file to disable this checking in case one of satellite server is down but this will make the snapshot operation not working correctly.
+
+
 
 > [!NOTE]
 >

@@ -110,6 +110,7 @@ class eve_lab():
         self.eve_password = eve_password
         self.eve_lab_name = eve_lab_name.strip() + ".unl" if eve_lab_name.split(".")[
                                                                  -1] != 'unl' else eve_lab_name.strip()
+        self.eve_ignore_sat_check = ignore_sat_check
         self.headers = {'Accept': 'application/json', "Content-Type": "application/json", }
         self.qemu_bin = "qemu-img"
         self.lab_id = self._get(api_endpoints["labs"].format(self.eve_lab_name), ["id"], format="json")[0]['id']
@@ -121,16 +122,17 @@ class eve_lab():
         # check if number of sats is more than 1 and directory /root/sats not exist. we will advise the user to create it
         sats = self.get_sats_if_exists()
 
-        for sat in sats:
-            if self.sat_found and not os.path.isdir(f"/root/sats/{sat}"):
-                print(
-                    f"Satellite id {sat} found but no directory mapped!. Please create the directory /root/sats and map it using SSHFS to be able to take snapshots from nodes scheduled on this satellite\n\n"
-                    f"Sample Commands:\n"
-                    f"sudo apt install sshfs\n"
-                    f"mkdir -p /root/sats/{sat}\n"
-                    f"sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@$$SAT{sat}_IP$$:/opt/unetlab/tmp/ /root/sats/{sat}\n\n"
-                    f"")
-                exit(1)
+        if not self.eve_ignore_sat_check:
+            for sat in sats:
+                if self.sat_found and not os.path.isdir(f"/root/sats/{sat}"):
+                    print(
+                        f"Satellite id {sat} found but no directory mapped!. Please create the directory /root/sats and map it using SSHFS to be able to take snapshots from nodes scheduled on this satellite\n\n"
+                        f"Sample Commands:\n"
+                        f"sudo apt install sshfs\n"
+                        f"mkdir -p /root/sats/{sat}\n"
+                        f"sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@$$SAT{sat}_IP$$:/opt/unetlab/tmp/ /root/sats/{sat}\n\n"
+                        f"")
+                    exit(1)
 
     def update_cookies(func):
         @functools.wraps(func)
@@ -965,6 +967,8 @@ if __name__ == '__main__':
     eve_password = os.environ.get('eve_password', 'eve')
     eve_lab_name = os.environ.get('eve_lab_name', None)
     eve_lab_cnx_file = os.environ.get('eve_lab_cnx_file', None)
+    ignore_sat_check = False if os.environ.get('ignore_sat_check', None) == "False" else True
+    # print(ignore_sat_check)
 
     eve_ops = eve_lab(eve_lab_name=eve_lab_name, eve_ip=eve_ip, eve_user=eve_user, eve_password=eve_password)
 
@@ -1042,17 +1046,21 @@ curl  --silent --insecure -c  /tmp/cookie -b /tmp/cookie -X GET -H 'Content-type
 
 ssh-copy-id root@192.168.8.240
 ssh-copy-id root@192.168.8.230
+ssh-copy-id root@192.168.8.220
 
 vim /etc/fstab
 root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
 root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
+root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
 
 umount /root/sats/1
 umount /root/sats/2
-mkdir -p /root/sats/{1,2}
+umount /root/sats/3
+mkdir -p /root/sats/{1,2,3}
 
 sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1
 sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3
 
 
 
