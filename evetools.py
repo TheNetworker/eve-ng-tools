@@ -11,7 +11,7 @@ import argparse
 import yaml
 import netaddr
 import csv
-
+import itertools
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 debug = 0
 api_endpoints = {
@@ -26,9 +26,76 @@ api_endpoints = {
     "network": "/api/labs/{0}/networks/{1}",
     "links": "/api/labs/{0}/links",
     "topology": "/api/labs/{0}/topology",
+    "cluster": "/api/cluster",
+    "status": "/api/status",
 
 }
 
+def percent_complete(step, total_steps, bar_width=60, title="", print_perc=True):
+    """
+    :param step: The current step of the process.
+    :param total_steps: The total number of steps in the process.
+    :param bar_width: The width of the progress bar (default is 60).
+    :param title: The title of the progress bar (default is empty).
+    :param print_perc: Indicates whether to print the percentage complete (default is True).
+    :return: None
+
+    This method displays a progress bar and the percentage complete of a process. It takes the current step and the total number of steps as parameters, along with optional parameters for
+    * the width of the progress bar and the title of the progress bar. By default, it also prints the percentage complete.
+
+    The progress bar is displayed using UTF-8 characters to represent the progress. Each full block represents a completed step, and the partial block indicates the progress within the current
+    * step. The progress bar is padded with fill characters to reach the specified width.
+
+    The progress bar is printed in green color, and the percentage complete is appended to the progress bar if requested. The output is displayed in the terminal over the same line using
+    * '\r'."""
+    import sys
+
+    # UTF-8 left blocks: 1, 1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8
+    utf_8s = ["█", "▏", "▎", "▍", "▌", "▋", "▊", "█"]
+    perc = 100 * float(step) / float(total_steps)
+    max_ticks = bar_width * 8
+    num_ticks = int(round(perc / 100 * max_ticks))
+    full_ticks = num_ticks / 8  # Number of full blocks
+    part_ticks = num_ticks % 8  # Size of partial block (array index)
+
+    disp = bar = ""  # Blank out variables
+    bar += utf_8s[0] * int(full_ticks)  # Add full blocks into Progress Bar
+
+    # If part_ticks is zero, then no partial block, else append part char
+    if part_ticks > 0:
+        bar += utf_8s[part_ticks]
+
+    # Pad Progress Bar with fill character
+    bar += "▒" * int((max_ticks / 8 - float(num_ticks) / 8.0))
+
+    if len(title) > 0:
+        disp = title + ": "  # Optional title to progress display
+
+    # Print progress bar in green: https://stackoverflow.com/a/21786287/6929343
+    disp += "\x1b[0;32m"  # Color Green
+    disp += bar  # Progress bar to progress display
+    disp += "\x1b[0m"  # Color Reset
+    if print_perc:
+        # If requested, append percentage complete to progress display
+        if perc > 100.0:
+            perc = 100.0  # Fix "100.04 %" rounding error
+        disp += " {:6.2f}".format(perc) + " %"
+
+    # Output to terminal repetitively over the same line using '\r'.
+    sys.stdout.write("\r" + disp)
+    sys.stdout.flush()
+
+
+def nice_sleep(sleep_time):
+    sleep_time = int(sleep_time)
+    step = 0
+    while step <= sleep_time:
+        # print the progress bar with the # of seconds left
+        # sleep for 1 second and then decrement the counter
+        time.sleep(1)
+        percent_complete(step=step, total_steps=sleep_time, title=f"Task Progress: ")
+        step += 1
+    print("\n")
 
 class eve_lab():
     def __init__(self, eve_lab_name, eve_ip, eve_user="admin", eve_password="eve", ):
@@ -38,7 +105,7 @@ class eve_lab():
             print("Please provide a lab name: source /root/telco_lab.env")
             exit(1)
 
-        self.eve_url = "https://{}".format(eve_ip)
+        self.eve_url = "https://{}".format(eve_ip) if "https://" not in eve_ip else eve_ip
         self.eve_user = eve_user
         self.eve_password = eve_password
         self.eve_lab_name = eve_lab_name.strip() + ".unl" if eve_lab_name.split(".")[
@@ -46,7 +113,24 @@ class eve_lab():
         self.headers = {'Accept': 'application/json', "Content-Type": "application/json", }
         self.qemu_bin = "qemu-img"
         self.lab_id = self._get(api_endpoints["labs"].format(self.eve_lab_name), ["id"], format="json")[0]['id']
-        self.user_tenant = self._get(api_endpoints["auth"], format="json")['data']['tenant']
+        self.user_tenant = str(self._get(api_endpoints["auth"], format="json")['data']['tenant'])
+        self.community = False if "-PRO" in self.get_status().get("data").get("version") else True
+        # print(self.get_status())
+        # print(self.community)
+
+        # check if number of sats is more than 1 and directory /root/sats not exist. we will advise the user to create it
+        sats = self.get_sats_if_exists()
+
+        for sat in sats:
+            if self.sat_found and not os.path.isdir(f"/root/sats/{sat}"):
+                print(
+                    f"Satellite id {sat} found but no directory mapped!. Please create the directory /root/sats and map it using SSHFS to be able to take snapshots from nodes scheduled on this satellite\n\n"
+                    f"Sample Commands:\n"
+                    f"sudo apt install sshfs\n"
+                    f"mkdir -p /root/sats/{sat}\n"
+                    f"sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@$$SAT{sat}_IP$$:/opt/unetlab/tmp/ /root/sats/{sat}\n\n"
+                    f"")
+                exit(1)
 
     def update_cookies(func):
         @functools.wraps(func)
@@ -195,19 +279,71 @@ class eve_lab():
             print(_.request.url)
             print(_.status_code)
 
+    # TODO: Implement the following methods
+    def get_sats_if_exists(self):
+
+        sats = self._get(api_endpoints["cluster"],format="json")
+        sats = sats.get("data", None)
+
+        if len(sats) > 1:
+            self.sat_found = True
+            tmp = []
+            for k,v in sats.items():
+                tmp.append(v["id"])
+            sats = tmp[1:]
+        else:
+            self.sat_found = False
+            sats = []
+
+        # pprint(sats)
+
+        return sats
+
+    def get_status(self):
+        return self._get(api_endpoints["status"], format="json")
+
     def get_nodes(self, include_qcow2=True):
         all_nodes_temp = self._get(api_endpoint=api_endpoints["nodes"].format(self.eve_lab_name),
                                    fields=["name", "id", "template", "status", "image", "url", "cpu", "ram",
-                                           "ethernet", "firstmac"],
+                                           "ethernet", "firstmac", "sat"],
                                    format="json")
         self.nodes = []
         if include_qcow2:
-            the_dir = os.listdir(self.lab_home_directory)
+            try:
+                the_dir = os.listdir(self.lab_home_directory)
+
+                sats_dir = os.path.isdir("/root/sats")
+                if sats_dir:
+                    for sat_dir_id in os.listdir("/root/sats"):
+                        sat_dir_id = str(sat_dir_id)
+                        # check if self.lab_id is inside self.user_tenant/self.lab_id
+                        if os.path.isdir(os.path.join("/root/sats/", sat_dir_id, self.user_tenant, self.lab_id)):
+                            sat_dir = os.path.join("/root/sats/", sat_dir_id, self.user_tenant, self.lab_id)
+                            # print("sat_dir: ", sat_dir)
+                            sat_dir_node_list = os.listdir(sat_dir)
+                            sat_dir_node_list = [f"sat:{sat_dir_id}:{x}" for x in sat_dir_node_list]
+                            the_dir.extend(sat_dir_node_list)
+
+
+            except FileNotFoundError:
+                print(
+                    "Lab home directory is not found on the server: {}. You need to start the node to create the folder".format(
+                        self.lab_home_directory))
+                exit(1)
+            # print("The directory is: ")
+            # pprint(the_dir)
             for node_id in the_dir:
                 # TODO a bit slow, need to optimize it, may by with glob?
 
                 # print("op1")
-                node_directory = f"{self.lab_home_directory}/{node_id}"
+                if "sat:" in node_id:
+                    # print("node_id: ", node_id)
+                    sat_id = node_id.split(":")[1]
+                    node_id = node_id.split(":")[-1]
+                    node_directory = f"/root/sats/{sat_id}/{self.user_tenant}/{self.lab_id}/{node_id}"
+
+                else:
+                    node_directory = f"{self.lab_home_directory}/{node_id}"
                 # print(node_directory)
                 # print("finish op1")
                 # try:
@@ -290,7 +426,8 @@ class eve_lab():
 
         print(banner.format("EVE Nodes"))
         print(self._get(api_endpoints["nodes"].format(self.eve_lab_name),
-                        ["name", "id", "template", "status", "image", "url", "cpu", "ram", "ethernet", "firstmac"],
+                        ["name", "id", "template", "status", "image", "url", "cpu", "ram", "ethernet", "firstmac",
+                         "sat"],
                         format="pretty"))
         #
         # print(self._get(api_endpoints["networks"].format(self.eve_lab_name),["name","id","type","count","linkstyle"],format="pretty"))
@@ -316,6 +453,7 @@ class eve_lab():
         table.padding_width = 1
         table.horizontal_char = "-"
         table.junction_char = "+"
+        list_of_snapshots = []
         for node in nodes:
 
             for f in node["qcow2_files"]:
@@ -325,13 +463,25 @@ class eve_lab():
                                         input=output_raw.stdout, capture_output=True)
 
                 if output_raw.returncode == 0:
-                    table.add_row([node['id'],
+                    list_of_snapshots.append([node['id'],
                                    node["name"],
                                    "shutdown" if node["status"] == 0 else "running",
                                    output.stdout.decode("utf-8").strip(), f])
+                    # table.add_row([node['id'],
+                    #                node["name"],
+                    #                "shutdown" if node["status"] == 0 else "running",
+                    #                output.stdout.decode("utf-8").strip(), f])
                 else:
                     print("unable to execute the command: {}".format(command))
                     exit(1)
+        list_of_snapshots.sort()
+        list_of_snapshots = list(k for k, _ in itertools.groupby(list_of_snapshots))
+
+        # add the sorted list to the table
+        for snapshot in list_of_snapshots:
+            table.add_row(snapshot)
+
+
         return table.get_string(sortby="id")
 
     def snapshot_ops(self, snapshotname, ops="revert", nodes="all"):
@@ -344,13 +494,19 @@ class eve_lab():
         lab_nodes = self.get_nodes(include_qcow2=True)
         if nodes == "all":
             final_list_of_nodes = lab_nodes
+            x = input("Are you sure you want to apply the operation: '{}' on all nodes?[y/n]: ".format(ops))
+            if x.lower() != "y":
+                print("Exiting without applying the operation")
+                exit(1)
+
+
 
         else:
             final_list_of_nodes = self._filter_node(all_nodes=lab_nodes, desired_nodes_name=nodes)
 
         for node in final_list_of_nodes:
             if node["status"] != 0:
-                print("Please ensure the domain is down before working over the snapshots: '{}'".format(node["name"]))
+                print("Please ensure the domain is powered-off before working over the snapshots: '{}'".format(node["name"]))
                 exit(1)
 
             for f in node["qcow2_files"]:
@@ -383,6 +539,10 @@ class eve_lab():
         # pprint(lab_nodes)
         if nodes == "all":
             final_list_of_nodes = lab_nodes
+            x = input("Are you sure you want to apply the operation: '{}' on all nodes?[y/n]: ".format(ops))
+            if x.lower() != "y":
+                print("Exiting without applying the operation")
+                exit(1)
 
         else:
             final_list_of_nodes = self._filter_node(all_nodes=lab_nodes, desired_nodes_name=nodes)
@@ -453,12 +613,20 @@ class eve_lab():
             elif ops == "get_console_port":
                 print("{}".format(node["url"].split(":")[-1]))
                 break
+
+            elif ops == "stop-then-start":
+                self.nodes_ops("stop", node["name"])
+                nice_sleep(3)
+                self.nodes_ops("start", node["name"])
+                nice_sleep(3)
             else:
                 url = api_endpoints["node"].format(self.eve_lab_name, node["id"]) + "/{}".format(ops)
                 if delay:
-                    time.sleep(delay)
+                    nice_sleep(delay)
                 if ops == "stop":
-                    url = url + "/stopmode=3"  # required for eve-ng pro only
+                    if not self.community:
+                        url = url + "/stopmode=3"
+
                 self._get(api_endpoint=url)
                 time.sleep(0.1)
 
@@ -520,7 +688,7 @@ class eve_lab():
         time.sleep(0.1)
 
     def get_ansible_data(self, file_path):  # Day1 and Day2
-        print("working on file path: {}".format(file_path))
+        # print("working on file path: {}".format(file_path))
 
         if not os.path.isfile(file_path):
             print("  Error: file path: {} does not exist".format(file_path))
@@ -603,9 +771,7 @@ class eve_lab():
                                                                                                  v["ip"],
                                                                                                  v["peer_node"],
                                                                                                  v["pport"],
-                                                                                                 v["peer_ip"],
-
-                                                                                                 ))
+                                                                                                 v["peer_ip"], ))
 
             print("\n")
 
@@ -629,7 +795,7 @@ class eve_lab():
         # print(yaml.dump(p2p_ip,  default_flow_style=False, allow_unicode=True, sort_keys=True, indent=2,explicit_start=False,default_style='',width=1000))
 
     def rack_and_stack_nodes_in_topology(self, file_path, ops="add", cnx_body="", flavor="", transform=""):  # Day0
-        print("->working on file path: {}".format(file_path))
+        # print("->working on file path: {}".format(file_path))
         print(
             "->Important [1]: Please don't login to EVE-NG GUI until this operation is finished to avoid interrupting the API")
 
@@ -703,15 +869,6 @@ class eve_lab():
 
 if __name__ == '__main__':
 
-    eve_ip = os.environ.get('eve_ip', None)
-    eve_user = os.environ.get('eve_user', 'admin')
-    eve_password = os.environ.get('eve_password', 'eve')
-    eve_pod = str(os.environ.get('eve_pod', 0))
-    eve_lab_name = os.environ.get('eve_lab_name', None)
-    eve_lab_cnx_file = os.environ.get('eve_lab_cnx_file', None)
-
-    eve_ops = eve_lab(eve_lab_name=eve_lab_name, eve_ip=eve_ip, eve_user=eve_user, eve_password=eve_password)
-
     # for testing only
     # pprint(eve_ops.interfaces_to_ids_in_node(node_name="C2_R3"))
     # pprint(eve_ops.add_new_bridge(bridge_name="bassem"))
@@ -723,7 +880,9 @@ if __name__ == '__main__':
     main_parser = argparse.ArgumentParser(prog='eve',
                                           description='EVE-NG tools, A Utility to make operations with EVE-NG more friendly.',
                                           epilog="mailto:basim.alyy@gmail, blog:http://basimaly.wordpress.com/",
-                                          add_help=True)
+                                          add_help=True,
+                                          formatter_class=argparse.RawTextHelpFormatter,
+                                          )
 
     subprasers = main_parser.add_subparsers(dest='operation',
                                             # used only within the python code and as namespace key "args.operation"
@@ -768,7 +927,7 @@ if __name__ == '__main__':
 
     lab_g2 = lab_ops.add_argument_group()
     lab_g2.add_argument("--action",
-                        choices=["start", "stop", "list", "init", "get_console_port"],
+                        choices=["start", "stop", "stop-then-start", "wipe", "list", "init", "get_console_port"],
                         required=False,
                         help="Do operation over nodes",
                         )
@@ -800,6 +959,17 @@ if __name__ == '__main__':
     snap_g2.add_argument("--nodes", required=False, help="list of nodes with comma separated", default="all")
 
     args, extra = main_parser.parse_known_args()
+
+    eve_ip = os.environ.get('eve_ip', None)
+    eve_user = os.environ.get('eve_user', 'admin')
+    eve_password = os.environ.get('eve_password', 'eve')
+    eve_lab_name = os.environ.get('eve_lab_name', None)
+    eve_lab_cnx_file = os.environ.get('eve_lab_cnx_file', None)
+
+    eve_ops = eve_lab(eve_lab_name=eve_lab_name, eve_ip=eve_ip, eve_user=eve_user, eve_password=eve_password)
+
+
+
     if args.operation == "lab":
         if args.describe:
             print(eve_ops.describe())
@@ -826,6 +996,9 @@ if __name__ == '__main__':
             elif args.action == "init":
                 eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=True)
             else:
+                if args.delay:
+                    print("Total time till complete operation on all nodes: {} minutes".format(
+                        int(args.delay) * len(args.nodes.split(",")) / 60))
                 eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=False, delay=int(args.delay))
 
     elif args.operation == "snapshot":
@@ -841,7 +1014,7 @@ if __name__ == '__main__':
 '''
 *Lab operation*
 eve-tools lab --describe
-eve-tools lab --action start 
+eve-tools lab --action start [--delay 10]
 eve-tools lab --action stop --nodes issu-0,issu-1
 
 eve-tools lab --action init
@@ -867,5 +1040,23 @@ curl -iv --insecure -b /tmp/cookie -c /tmp/cookie -X POST  -H 'Content-type: app
 
 curl  --silent --insecure -c  /tmp/cookie -b /tmp/cookie -X GET -H 'Content-type: application/json' https://10.99.100.252/api/labs/5G_Core_in_CSP.unl/nodes | python -mjson.tool
 
+ssh-copy-id root@192.168.8.240
+ssh-copy-id root@192.168.8.230
+
+vim /etc/fstab
+root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
+root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
+
+umount /root/sats/1
+umount /root/sats/2
+mkdir -p /root/sats/{1,2}
+
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2
+
+
+
 
 '''
+
+

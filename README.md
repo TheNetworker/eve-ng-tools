@@ -19,16 +19,15 @@ The tool need to be hosted on the eve-ng server since it use some local commands
 ## Create virtualenv
 
 ```bash
-
 # ubuntu
-sudo apt-get install python3-pip
+sudo apt-get install python3-pip -y
 sudo pip3 install virtualenv
 
 # RHEL 7/CentOS 8
 sudo yum install python-virtualenv
 
 # install virtualenv
-virtualenv --python /usr/bin/python3.10  .venv # use python version > 3.5
+virtualenv --python /usr/bin/python3  .venv # use python version > 3.5
 source .venv/bin/activate
 ```
 
@@ -37,7 +36,7 @@ source .venv/bin/activate
 ## Clone Repo and install requirements
 
 ```bash
-
+rm -rf ~/eve-ng-tools || true
 git clone https://github.com/TheNetworker/eve-ng-tools.git
 cd eve-ng-tools
 pip install -r requirements.txt
@@ -57,13 +56,61 @@ export eve_password=eve
 export eve_lab_name=5G_Core_in_CSP.unl
 export eve_lab_cnx_file="/root/5G_Core_in_CSP_CNX.yml"
 
-#export eve_nodes_spec="linux1:30G,linux2:40G"
-#export eve_nodes_spec="ubuntu_vm:10G,ubuntu2:10G,CentOS1:10G"
 
 EOF
 
 source /root/telco_lab.env
 ```
+
+
+
+> [!IMPORTANT]
+>
+> if you're working on EVE-NG environment with multiple users and pods, the tool will get the pod number and add it to the `user_tenant` vairbale to be used later in different operation
+>
+> 
+
+![image-20240313120621509](./assets/image-20240313120621509.png)
+
+
+
+
+
+## Working with eve-ng in cluster mode
+
+The EVE-NG Professional edition supports adding multiple nodes to form a server cluster, also known as **satellites**, on which you can run your lab. EVE-NG will handle the connectivity between these clusters using WireGuard clients so they appear as a seamless connected on a same node although they're running on different ones.
+
+
+
+![image-20240608153428074](./assets/image-20240608153428074.png)
+
+Source: [EVE-NG Cluster Presentation](https://www.eve-ng.net/wp-content/uploads/2021/03/EVE_cluster_presentation-4.4-Pro.pdf)
+
+However, this creates a problem when taking snapshots of nodes scheduled over those satellites, as `eve-ng-tools` expects the qcow2 files to be on the master node. Therefore, execute the commands below to remotely map the disk of `/opt/unetlab/tmp/` at the satellite node(s) to the master server. If directories are not mapped, eve-ng-tools will raise an error and exit.
+
+
+
+```sh
+# create directory per satellite server (here we have three satellite servers)
+mkdir -p /root/sats/{1,2,3}
+
+# install the sshfs package on eve-ng master 
+sudo apt install sshfs -y
+
+# remotely map the directory of sat1 (EX IP: 192.168.8.240)
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1
+
+# remotely map the directory of sat2 (EX IP: 192.168.8.230)
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/1
+
+# remotely map the directory of sat3 (EX IP: 192.168.8.220)
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3
+
+```
+
+> [!NOTE]
+>
+> You need to execute the same commands one more time if you rebooted the master node.
 
 
 
@@ -141,7 +188,7 @@ python evetools.py lab --action stop --nodes issu-0,issu-1
 
  
 
-**[new] [4] Rack and Stack nodes**
+**[4] Rack and Stack nodes**
 
 ```sh
 python evetools.py lab --rack_and_stack
@@ -186,7 +233,7 @@ Please see the below demo fro more infomration
 
  
 
-**[new] [5] Connect only one cable**
+**[5] Connect only one cable**
 
 ```sh
 python evetools.py lab '{json_payload}'
@@ -201,7 +248,7 @@ adding missing connections without need to repeat pushing the full cable plan on
 
  
 
-**[new] [6] De-Rack and Stack nodes**
+**[6] De-Rack and Stack nodes**
 
 ```sh
 python evetools.py lab --de_rack_and_stack
@@ -211,25 +258,25 @@ The opposite of previous feature, obviously!. it will remove the disconnect the 
 
  
 
-**[new] [7] Get Ansible Data**
+**[7] Get Ansible Data**
 
 To be explained later
 
  
 
-**[new] [8] Adjust Qcow2 VM size**
+**[8] Adjust Qcow2 VM size**
 
 To be explained later
 
  
 
-**[new] [9] Support reading the connection details from Juniper Apstra Cabling Map**
+** [9] Support reading the connection details from Juniper Apstra Cabling Map**
 
 To be explained later
 
  
 
-**[new] [10] Get the console port**
+**[10] Get the console port**
 
 ```bash
 python evetools.py lab --action get_console_port --nodes dcn1-leaf1   #node need to be powered-on
