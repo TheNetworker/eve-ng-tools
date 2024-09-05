@@ -318,14 +318,17 @@ class eve_lab():
                 if sats_dir:
                     for sat_dir_id in os.listdir("/root/sats"):
                         sat_dir_id = str(sat_dir_id)
+                        # print("sat_dir_id: ", sat_dir_id)
                         # check if self.lab_id is inside self.user_tenant/self.lab_id
                         if os.path.isdir(os.path.join("/root/sats/", sat_dir_id, self.user_tenant, self.lab_id)):
                             sat_dir = os.path.join("/root/sats/", sat_dir_id, self.user_tenant, self.lab_id)
                             # print("sat_dir: ", sat_dir)
                             sat_dir_node_list = os.listdir(sat_dir)
+                            for x in sat_dir_node_list:
+                                the_dir.remove(x)
                             sat_dir_node_list = [f"sat:{sat_dir_id}:{x}" for x in sat_dir_node_list]
+                            # remove the sat directory from the list
                             the_dir.extend(sat_dir_node_list)
-
 
             except FileNotFoundError:
                 print(
@@ -338,6 +341,7 @@ class eve_lab():
                 # TODO a bit slow, need to optimize it, may by with glob?
 
                 # print("op1")
+                # print(node_id)
                 if "sat:" in node_id:
                     # print("node_id: ", node_id)
                     sat_id = node_id.split(":")[1]
@@ -494,15 +498,13 @@ class eve_lab():
             "delete": "-d",
         }
         lab_nodes = self.get_nodes(include_qcow2=True)
+        # pprint(lab_nodes)
         if nodes == "all":
             final_list_of_nodes = lab_nodes
             x = input("Are you sure you want to apply the operation: '{}' on all nodes?[y/n]: ".format(ops))
             if x.lower() != "y":
                 print("Exiting without applying the operation")
                 exit(1)
-
-
-
         else:
             final_list_of_nodes = self._filter_node(all_nodes=lab_nodes, desired_nodes_name=nodes)
 
@@ -510,9 +512,10 @@ class eve_lab():
             if node["status"] != 0:
                 print("Please ensure the domain is powered-off before working over the snapshots: '{}'".format(node["name"]))
                 exit(1)
-
+            # print("node: {}".format(node["qcow2_files"]))
             for f in node["qcow2_files"]:
                 command = [self.qemu_bin, "snapshot", flags[ops], "{}".format(snapshotname), "{}".format(f)]
+                # print(command)
                 output_raw = subprocess.run(command, capture_output=True)
                 if output_raw.returncode == 0:
                     print("successfully applied operation: '{}' over doamin: '{}' with snapshotname: '{}' ".format(ops,
@@ -879,6 +882,7 @@ if __name__ == '__main__':
 
     # exit(1)
     # end the testing
+
     main_parser = argparse.ArgumentParser(prog='eve',
                                           description='EVE-NG tools, A Utility to make operations with EVE-NG more friendly.',
                                           epilog="mailto:basim.alyy@gmail, blog:http://basimaly.wordpress.com/",
@@ -976,7 +980,7 @@ if __name__ == '__main__':
 
     if args.operation == "lab":
         if args.describe:
-            print(eve_ops.describe())
+            eve_ops.describe()
         elif args.rack_and_stack:
             if args.flavor == 'apstra':
                 eve_ops.rack_and_stack_nodes_in_topology(ops="add", file_path=eve_lab_cnx_file, flavor='apstra',
@@ -996,7 +1000,7 @@ if __name__ == '__main__':
 
         elif args.action:
             if args.action == "list":
-                print(eve_ops.describe())
+                eve_ops.describe()
             elif args.action == "init":
                 eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=True)
             else:
@@ -1010,6 +1014,7 @@ if __name__ == '__main__':
             print(eve_ops.list_snapshots())
         elif args.ops:
             if args.snapshot:
+
                 eve_ops.snapshot_ops(snapshotname=args.snapshot, ops=args.ops, nodes=args.nodes)
             else:
                 print("Please provide snapshot name! (--snapshot)")

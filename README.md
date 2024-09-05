@@ -147,7 +147,8 @@ Two operations are currently supported
 
 ```bash
 python evetools.py lab -h
-usage: eve lab [-h] [--describe | --rack_and_stack | --cnx_body CNX_BODY | --de_rack_and_stack | --get_ansible_data] [--action {start,stop,list,init}] [--nodes NODES]
+usage: eve lab [-h] [--describe | --rack_and_stack | --cnx_body CNX_BODY | --de_rack_and_stack | --get_ansible_data] [--action {start,stop,stop-then-start,wipe,list,init,get_console_port}]
+               [--nodes NODES] [--flavor {apstra}] [--delay DELAY]
 
 options:
   -h, --help            show this help message and exit
@@ -157,9 +158,11 @@ options:
   --de_rack_and_stack   disconnect the nodes from each other according to the topology file stored in env variable eve_lab_cnx_file
   --get_ansible_data    Get the data required by ansible playbooks to configure Day1 according to the topology file stored in env variable eve_lab_cnx_file
 
-  --action {start,stop,list,init}
+  --action {start,stop,stop-then-start,wipe,list,init,get_console_port}
                         Do operation over nodes
   --nodes NODES         list of nodes with comma separated
+  --flavor {apstra}     provide the flavor of the lab mgmt solution
+  --delay DELAY         provide the delay in seconds between each node operation
 ```
 
  
