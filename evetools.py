@@ -12,6 +12,8 @@ import yaml
 import netaddr
 import csv
 import itertools
+import re
+import pickle
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 debug = 0
 api_endpoints = {
@@ -30,6 +32,7 @@ api_endpoints = {
     "status": "/api/status",
 
 }
+
 
 def percent_complete(step, total_steps, bar_width=60, title="", print_perc=True):
     """
@@ -97,14 +100,22 @@ def nice_sleep(sleep_time):
         step += 1
     print("\n")
 
+
 class eve_lab():
-    def __init__(self, eve_lab_name, eve_ip, eve_user="admin", eve_password="eve", ):
+    def __init__(self, eve_lab_name,
+                 eve_ip,
+                 eve_user="admin",
+                 eve_password="eve",
+                 eve_use_cache=True,
+                 eve_force_refresh_cache=False,
+                 eve_refresh_cache_time=43200,
+                 ):
         self.eve_lab_name = eve_lab_name
 
         if not self.eve_lab_name:
-            print("Please provide a lab name: source /root/telco_lab.env")
+            print("Please provide a lab name: source /root/.venv/bin/activate ; . ~/lab_telcocloud.env")
             exit(1)
-
+        self.eve_use_cache = eve_use_cache
         self.eve_url = "https://{}".format(eve_ip) if "https://" not in eve_ip else eve_ip
         self.eve_user = eve_user
         self.eve_password = eve_password
@@ -113,26 +124,111 @@ class eve_lab():
         self.eve_ignore_sat_check = ignore_sat_check
         self.headers = {'Accept': 'application/json', "Content-Type": "application/json", }
         self.qemu_bin = "qemu-img"
-        self.lab_id = self._get(api_endpoints["labs"].format(self.eve_lab_name), ["id"], format="json")[0]['id']
-        self.user_tenant = str(self._get(api_endpoints["auth"], format="json")['data']['tenant'])
-        self.community = False if "-PRO" in self.get_status().get("data").get("version") else True
-        # print(self.get_status())
-        # print(self.community)
+        self.eve_force_refresh_cache = eve_force_refresh_cache
 
-        # check if number of sats is more than 1 and directory /root/sats not exist. we will advise the user to create it
-        sats = self.get_sats_if_exists()
+        # get the creation time of the pickle files and do referesh if it's older than 24 hours
+        time_now = time.time()
+        try:
+            time_cache = os.path.getmtime(f"{self.eve_lab_name}_lab_id_cache.pickle")
+            # print("time_cache: ", time_now - time_cache)
+            if time_now - time_cache > eve_refresh_cache_time:
+                eve_refresh_cache_time_in_hours = eve_refresh_cache_time / 3600
+                self.eve_force_refresh_cache = True
+                print(f"Refreshing the cache since it's older than {eve_refresh_cache_time_in_hours} hours, please execute the script again after finishing the refresh")
+        except FileNotFoundError:
+            pass
+        if self.eve_force_refresh_cache:
+            try:
+                os.remove(f"{self.eve_lab_name}_lab_id_cache.pickle")
+            except:
+                pass
+            try:
+                os.remove(f"{self.eve_lab_name}_user_tenant_cache.pickle")
+            except:
+                pass
+            try:
+                os.remove(f"{self.eve_lab_name}_status_cache.pickle")
+            except:
+                pass
+            try:
+                os.remove(f"{self.eve_lab_name}_eve_sats.pickle")
+            except:
+                pass
+            try:
+                os.remove(f"{self.eve_lab_name}_nodes_cache.pickle")
+            except:
+                pass
 
-        if not self.eve_ignore_sat_check:
-            for sat in sats:
-                if self.sat_found and not os.path.isdir(f"/root/sats/{sat}"):
-                    print(
-                        f"Satellite id {sat} found but no directory mapped!. Please create the directory /root/sats and map it using SSHFS to be able to take snapshots from nodes scheduled on this satellite\n\n"
-                        f"Sample Commands:\n"
-                        f"sudo apt install sshfs\n"
-                        f"mkdir -p /root/sats/{sat}\n"
-                        f"sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@$$SAT{sat}_IP$$:/opt/unetlab/tmp/ /root/sats/{sat}\n\n"
-                        f"")
-                    exit(1)
+            self.eve_use_cache = True
+
+        if self.eve_use_cache:
+
+            self.lab_id = self._load_or_fetch_cache(f"{self.eve_lab_name}_lab_id_cache.pickle",
+                                                    api_endpoints["labs"].format(self.eve_lab_name),
+                                                    ["id"], "json")[0]['id']
+            self.user_tenant = str(self._load_or_fetch_cache(f"{self.eve_lab_name}_user_tenant_cache.pickle",
+                                                         api_endpoints["auth"],
+                                                         format="json")['data']['tenant'])
+
+            self.status = self._load_or_fetch_cache(f"{self.eve_lab_name}_status_cache.pickle",
+                                                    api_endpoints["status"],
+                                                    format="json")
+
+            self.community = False if "-PRO" in self.status.get("data").get("version") else True
+
+            try:
+                with open(f"{self.eve_lab_name}_eve_sats.pickle", "rb") as f:
+                    # print("file found")
+                    self.sats = pickle.load(f)
+            except FileNotFoundError:
+                self.sats = self.get_sats_if_exists()
+                with open(f"{self.eve_lab_name}_eve_sats.pickle", "wb") as f:
+                    pickle.dump(self.sats, f)
+            if len(self.sats) > 1:
+                self.sat_found = True
+            else:
+                self.sat_found = False
+            self.check_if_directory_mapped_to_sat()
+            try:
+                with open(f"{self.eve_lab_name}_nodes_cache.pickle", "rb") as f:
+                    # print("file found")
+                    self.lab_nodes = pickle.load(f)
+                    # pprint(lab_nodes)
+            except FileNotFoundError:
+                # print("ssss")
+                self.lab_nodes = self.get_nodes(include_qcow2=True)
+                # pprint(self.lab_nodes)
+                with open(f"{self.eve_lab_name}_nodes_cache.pickle", "wb") as f:
+                    pickle.dump(self.lab_nodes, f)
+
+            if self.eve_force_refresh_cache:
+                print("Cache has been refreshed successfully")
+                exit(0)
+
+
+        else:
+            self.lab_id = self._get(api_endpoints["labs"].format(self.eve_lab_name), ["id"], format="json")[0]['id']
+            self.user_tenant = str(self._get(api_endpoints["auth"], format="json")['data']['tenant'])
+            self.status = self.get_status()
+            self.community = False if "-PRO" in self.status.get("data").get("version") else True
+            self.sats = self.get_sats_if_exists()
+            if len(self.sats) > 1:
+                self.sat_found = True
+            else:
+                self.sat_found = False
+            self.check_if_directory_mapped_to_sat()
+            self.lab_nodes = self.get_nodes(include_qcow2=True)
+
+
+    def _load_or_fetch_cache(self, cache_file, api_endpoint, fields=None, format="json"):
+        try:
+            with open(cache_file, "rb") as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            data = self._get(api_endpoint, fields, format)
+            with open(cache_file, "wb") as f:
+                pickle.dump(data, f)
+            return data
 
     def update_cookies(func):
         @functools.wraps(func)
@@ -144,15 +240,20 @@ class eve_lab():
                 'html5': -1
             }
 
+
             auth = requests.post(url=self.eve_url + api_endpoints["login"],
                                  headers=self.headers,
                                  verify=False,
                                  data=json.dumps(self.eve_auth_data),
                                  )
+            # print("Authenticating done with to EVE-NG")
 
             if auth.status_code == requests.codes.ok:
                 # print("Authentication successful")
                 self.eve_cookies = auth.cookies
+                # save the cookies to the file
+                # with open(f"{self.eve_lab_name}_eve_cookies.pickle", "wb") as f:
+                #     pickle.dump(self.eve_cookies, f)
             else:
                 print("Authentication failed")
                 print(auth.request.url)
@@ -197,6 +298,7 @@ class eve_lab():
                          verify=False,
                          cookies=self.eve_cookies,
                          )
+
 
         if _.status_code == requests.codes.ok:
             self.data = _.json().get('data', None)
@@ -284,22 +386,33 @@ class eve_lab():
     # TODO: Implement the following methods
     def get_sats_if_exists(self):
 
-        sats = self._get(api_endpoints["cluster"],format="json")
+        sats = self._get(api_endpoints["cluster"], format="json")
         sats = sats.get("data", None)
 
         if len(sats) > 1:
-            self.sat_found = True
             tmp = []
-            for k,v in sats.items():
+            for k, v in sats.items():
                 tmp.append(v["id"])
             sats = tmp[1:]
         else:
-            self.sat_found = False
             sats = []
 
-        # pprint(sats)
 
         return sats
+
+
+    def check_if_directory_mapped_to_sat(self):
+        if not self.eve_ignore_sat_check:
+            for sat in self.sats:
+                if self.sat_found and not os.path.isdir(f"/root/sats/{sat}"):
+                    print(
+                        f"Satellite id: [{sat}] found but no directory mapped!. Please create the directory /root/sats and map it using SSHFS to be able to take snapshots from nodes scheduled on this satellite\n\n"
+                        f"Sample Commands:\n"
+                        f"sudo apt install sshfs\n"
+                        f"mkdir -p /root/sats/{sat}\n"
+                        f"sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@$$SAT{sat}_IP$$:/opt/unetlab/tmp/ /root/sats/{sat}\n\n"
+                        f"")
+                    exit(1)
 
     def get_status(self):
         return self._get(api_endpoints["status"], format="json")
@@ -309,6 +422,7 @@ class eve_lab():
                                    fields=["name", "id", "template", "status", "image", "url", "cpu", "ram",
                                            "ethernet", "firstmac", "sat"],
                                    format="json")
+        # print("Getting nodes")
         self.nodes = []
         if include_qcow2:
             try:
@@ -400,12 +514,17 @@ class eve_lab():
                 if i == node["name"]:
                     final_list_of_nodes_obj.append(node)
                     break
+                # search by re.match
+                elif re.match(i, node["name"]):
+                    final_list_of_nodes_obj.append(node)
+        # Ensure all node objects are unique by comparing the node["name"] between objects and remove duplicates
+        final_list_of_nodes_obj = list(k for k, _ in itertools.groupby(final_list_of_nodes_obj))
+
         return final_list_of_nodes_obj
 
     def _get_node_id_by_name(self, node_name):
-        lab_nodes = self.get_nodes(include_qcow2=False)
         try:
-            return self._filter_node(lab_nodes, node_name)[0].get("id", None)
+            return self._filter_node(self.lab_nodes, node_name)[0].get("id", None)
         except IndexError:
             print("Node name {} is not found in the lab".format(node_name))
             exit(1)
@@ -422,7 +541,8 @@ class eve_lab():
                     ******************************** {:10s} ***********************************
                     ================================================================================
         '''
-
+        # print a warning that this method does NOT used a cached data to keep the data up-to-date except for snapshots
+        print("This method does NOT used a cached data to keep the data up-to-date except for snapshots")
         print(banner.format("lab"))
         print(self._get(api_endpoints["labs"].format(self.eve_lab_name), ["filename",
                                                                           "id",
@@ -452,7 +572,7 @@ class eve_lab():
 
     def list_snapshots(self):
 
-        nodes = self.get_nodes(include_qcow2=True)
+
         # print(node_qcow2)
         table = PrettyTable(["id", "name", "vm status", "snapshots", "qcow2_file"])
         table.hrules = 1
@@ -460,7 +580,7 @@ class eve_lab():
         table.horizontal_char = "-"
         table.junction_char = "+"
         list_of_snapshots = []
-        for node in nodes:
+        for node in self.lab_nodes:
 
             for f in node["qcow2_files"]:
                 command = [self.qemu_bin, "snapshot", "-l", "{}".format(f), "--force-share"]
@@ -470,23 +590,22 @@ class eve_lab():
 
                 if output_raw.returncode == 0:
                     list_of_snapshots.append([node['id'],
-                                   node["name"],
-                                   "shutdown" if node["status"] == 0 else "running",
-                                   output.stdout.decode("utf-8").strip(), f])
+                                              node["name"],
+                                              "shutdown" if node["status"] == 0 else "running",
+                                              output.stdout.decode("utf-8").strip(), f])
                     # table.add_row([node['id'],
                     #                node["name"],
                     #                "shutdown" if node["status"] == 0 else "running",
                     #                output.stdout.decode("utf-8").strip(), f])
                 else:
                     print("unable to execute the command: {}".format(command))
-                    exit(1)
+                    # exit(1)
         list_of_snapshots.sort()
         list_of_snapshots = list(k for k, _ in itertools.groupby(list_of_snapshots))
 
         # add the sorted list to the table
         for snapshot in list_of_snapshots:
             table.add_row(snapshot)
-
 
         return table.get_string(sortby="id")
 
@@ -497,20 +616,23 @@ class eve_lab():
             "create": "-c",
             "delete": "-d",
         }
-        lab_nodes = self.get_nodes(include_qcow2=True)
+
         # pprint(lab_nodes)
+        self.lab_nodes = self.get_nodes(include_qcow2=True)
         if nodes == "all":
-            final_list_of_nodes = lab_nodes
+            final_list_of_nodes = self.lab_nodes
+
             x = input("Are you sure you want to apply the operation: '{}' on all nodes?[y/n]: ".format(ops))
             if x.lower() != "y":
                 print("Exiting without applying the operation")
                 exit(1)
         else:
-            final_list_of_nodes = self._filter_node(all_nodes=lab_nodes, desired_nodes_name=nodes)
+            final_list_of_nodes = self._filter_node(all_nodes=self.lab_nodes, desired_nodes_name=nodes)
 
         for node in final_list_of_nodes:
             if node["status"] != 0:
-                print("Please ensure the domain is powered-off before working over the snapshots: '{}'".format(node["name"]))
+                print("Please ensure the domain is powered-off before working over the snapshots: '{}'".format(
+                    node["name"]))
                 exit(1)
             # print("node: {}".format(node["qcow2_files"]))
             for f in node["qcow2_files"]:
@@ -538,19 +660,30 @@ class eve_lab():
         else:
             return False, output_raw.stderr.decode("utf-8").strip()
 
-    def nodes_ops(self, ops, nodes="all", includes_qcow2=False, delay=0):
+    def nodes_ops(self, ops, nodes="all", includes_qcow2=False, delay=0, no_confirm=False):
         stop = 0
-        lab_nodes = self.get_nodes(include_qcow2=includes_qcow2)
-        # pprint(lab_nodes)
+
+        # I need to use the cache to avoid the multiple calls to the server, we can use pickle to save the data of nodes
+        # and then load it if the cache is True
+
+        if ops == "get_console_port":
+            for node in self.lab_nodes:
+                if node['name'] == nodes:
+                    print(f"{node['url'].split(':')[-1]} {node['name']}")
+                    return
+
+        # for any other operation, it's better to NOT use the cache to get the latest status of the nodes
+        self.lab_nodes = self.get_nodes(include_qcow2=includes_qcow2)
         if nodes == "all":
-            final_list_of_nodes = lab_nodes
-            x = input("Are you sure you want to apply the operation: '{}' on all nodes?[y/n]: ".format(ops))
-            if x.lower() != "y":
-                print("Exiting without applying the operation")
-                exit(1)
+            final_list_of_nodes = self.lab_nodes
+            if not no_confirm: # meaning we should ask the user to confirm the selected operation on ALL nodes
+                x = input("Are you sure you want to apply the operation: '{}' on all nodes?[y/n]: ".format(ops))
+                if x.lower() != "y":
+                    print("Exiting without applying the operation")
+                    exit(1)
 
         else:
-            final_list_of_nodes = self._filter_node(all_nodes=lab_nodes, desired_nodes_name=nodes)
+            final_list_of_nodes = self._filter_node(all_nodes=self.lab_nodes, desired_nodes_name=nodes)
             if not final_list_of_nodes:
                 print("No nodes found with name: '{}'".format(nodes))
                 exit(1)
@@ -615,24 +748,33 @@ class eve_lab():
                             print(output)
                             exit(1)
                         break
-            elif ops == "get_console_port":
-                print("{}".format(node["url"].split(":")[-1]))
-                break
 
             elif ops == "stop-then-start":
-                self.nodes_ops("stop", node["name"])
+                self.nodes_ops("stop", node["name"])  # recursive call
+                nice_sleep(3)
+                self.nodes_ops("start", node["name"])  # recursive call
+                if args.delay:
+                    nice_sleep(int(args.delay))
+                else:
+                    nice_sleep(3)
+
+            elif ops == "wipe-then-start":
+                self.nodes_ops("wipe", node["name"])
                 nice_sleep(3)
                 self.nodes_ops("start", node["name"])
-                nice_sleep(3)
+                if args.delay:
+                    nice_sleep(int(args.delay))
+                else:
+                    nice_sleep(3)
             else:
                 url = api_endpoints["node"].format(self.eve_lab_name, node["id"]) + "/{}".format(ops)
-                if delay:
-                    nice_sleep(delay)
                 if ops == "stop":
                     if not self.community:
                         url = url + "/stopmode=3"
 
                 self._get(api_endpoint=url)
+                if delay:
+                    nice_sleep(delay)
                 time.sleep(0.1)
 
     def get_bridge_id_by_name(self, bridge_name):
@@ -714,15 +856,15 @@ class eve_lab():
         print("lab_" + self.eve_lab_name.split(".unl")[0] + ":")
         print("  network_nodes:")
 
-        lab_nodes = self.get_nodes(include_qcow2=False)
+
         lo_ip = {}
         isis = {}
         for node in network_nodes if network_nodes else []:
             loopback_last_octet = int(node["loopback"].split(".")[-1])
             mgmt_ip = str(ip_mgmt_subnet[loopback_last_octet])
 
-            mac = self._filter_node(lab_nodes, node["node_that_will_do_pxe"])[0]["firstmac"]
-            template = self._filter_node(lab_nodes, node["node_that_will_do_pxe"])[0]["template"]
+            mac = self._filter_node(self.lab_nodes, node["node_that_will_do_pxe"])[0]["firstmac"]
+            template = self._filter_node(self.lab_nodes, node["node_that_will_do_pxe"])[0]["template"]
 
             if "vqfxre" in template:
                 os_release = "junos-vqfx"
@@ -901,6 +1043,10 @@ if __name__ == '__main__':
     snapshot_ops = subprasers.add_parser(name='snapshot',
                                          help='Do Snapshot Operation')
 
+    # TODO
+    packet_capture_ops = subprasers.add_parser(name='packet_capture',
+                                                  help='Do Packet Capture Operation')
+
     lab_g1 = lab_ops.add_mutually_exclusive_group(required=False)
     lab_g1.add_argument("--describe",
                         action="store_true",
@@ -933,7 +1079,7 @@ if __name__ == '__main__':
 
     lab_g2 = lab_ops.add_argument_group()
     lab_g2.add_argument("--action",
-                        choices=["start", "stop", "stop-then-start", "wipe", "list", "init", "get_console_port"],
+                        choices=["start", "stop", "stop-then-start", "wipe-then-start", "wipe", "list", "init", "get_console_port"],
                         required=False,
                         help="Do operation over nodes",
                         )
@@ -954,6 +1100,20 @@ if __name__ == '__main__':
                         help="provide the delay in seconds between each node operation",
                         default=0
                         )
+    lab_g2.add_argument("--no-confirm",
+                        action="store_true",
+                        required=False,
+                        help="Do not ask for confirmation",
+                        default=False
+                        )
+
+    lab_g2.add_argument("--force-refresh-cache",
+                        action="store_true",
+                        required=False,
+                        help="Refresh the cache",
+                        default=False
+                        )
+
     snap_g1 = snapshot_ops.add_argument_group()
     snap_g1.add_argument("--list", action="store_true", required=False, help="list a snapshot")
 
@@ -964,6 +1124,10 @@ if __name__ == '__main__':
     snap_g2.add_argument("--snapshot", required=False, help="snapshot name")
     snap_g2.add_argument("--nodes", required=False, help="list of nodes with comma separated", default="all")
 
+
+    packet_capture_g1 = packet_capture_ops.add_argument_group()
+
+
     args, extra = main_parser.parse_known_args()
 
     eve_ip = os.environ.get('eve_ip', None)
@@ -971,11 +1135,26 @@ if __name__ == '__main__':
     eve_password = os.environ.get('eve_password', 'eve')
     eve_lab_name = os.environ.get('eve_lab_name', None)
     eve_lab_cnx_file = os.environ.get('eve_lab_cnx_file', None)
+    eve_use_cache = bool(os.environ.get('eve_use_cache', True))
+    eve_refresh_cache_time = int(os.environ.get('eve_refresh_cache_time', 86400))
     ignore_sat_check = False if os.environ.get('ignore_sat_check', "false").lower() == "false" else True
+
     # print(ignore_sat_check)
 
-    eve_ops = eve_lab(eve_lab_name=eve_lab_name, eve_ip=eve_ip, eve_user=eve_user, eve_password=eve_password)
+    try:
+        eve_force_refresh_cache = args.force_refresh_cache
+    except AttributeError:
+        eve_force_refresh_cache = False
 
+    eve_ops = eve_lab(eve_lab_name=eve_lab_name,
+                      eve_ip=eve_ip,
+                      eve_user=eve_user,
+                      eve_password=eve_password,
+                      eve_use_cache=eve_use_cache,
+                      eve_force_refresh_cache=eve_force_refresh_cache,  # force refresh cache
+                      eve_refresh_cache_time=eve_refresh_cache_time,
+                      )
+    # print("->EVE-NG IP: {}".format(eve_ip))
 
 
     if args.operation == "lab":
@@ -1005,9 +1184,20 @@ if __name__ == '__main__':
                 eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=True)
             else:
                 if args.delay:
-                    print("Total time till complete operation on all nodes: {} minutes".format(
-                        int(args.delay) * len(args.nodes.split(",")) / 60))
-                eve_ops.nodes_ops(ops=args.action, nodes=args.nodes, includes_qcow2=False, delay=int(args.delay))
+                    if args.nodes == "all":
+                        print("Total time till complete operation on all nodes: ~ {} minutes".format(
+                            int((int(args.delay) * len(eve_ops.get_nodes(include_qcow2=False))) / 60)
+                        )
+                        )
+                    else:
+                        print("Total time till complete operation on all nodes: {} seconds".format(
+                            int(args.delay) * len(args.nodes.split(","))))
+                eve_ops.nodes_ops(ops=args.action,
+                                  nodes=args.nodes,
+                                  includes_qcow2=False,
+                                  delay=int(args.delay),
+                                  no_confirm=args.no_confirm,
+                                  )
 
     elif args.operation == "snapshot":
         if args.list:
@@ -1023,10 +1213,7 @@ if __name__ == '__main__':
 '''
 *Lab operation*
 eve-tools lab --describe
-eve-tools lab --action start [--delay 10]
-eve-tools lab --action stop --nodes issu-0,issu-1
-
-eve-tools lab --action init
+eve-tools lab --action [start|stop|stop-then-start|wipe-then-start|wipe|list|init|get_console_port|] [--delay 10] [--nodes node1,node2 | nod.* | all] [--no-confirm]
 
 eve-tools lab --get_ansible_data
 eve-tools lab --rack_and_stack
@@ -1049,27 +1236,22 @@ curl -iv --insecure -b /tmp/cookie -c /tmp/cookie -X POST  -H 'Content-type: app
 
 curl  --silent --insecure -c  /tmp/cookie -b /tmp/cookie -X GET -H 'Content-type: application/json' https://10.99.100.252/api/labs/5G_Core_in_CSP.unl/nodes | python -mjson.tool
 
+*sshfs mount the satellite*
 ssh-copy-id root@192.168.8.240
 ssh-copy-id root@192.168.8.230
 ssh-copy-id root@192.168.8.220
 
 vim /etc/fstab
-root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
-root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
-root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3 fuse.sshfs noauto,x-systemd.automount,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions 0 0
-
+root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1 fuse.sshfs x-systemd.mount-timeout=30,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions,StrictHostKeyChecking=no 0 0
+root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2 fuse.sshfs x-systemd.mount-timeout=30,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions,StrictHostKeyChecking=no 0 0
+root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3 fuse.sshfs x-systemd.mount-timeout=30,_netdev,reconnect,identityfile=/root/.ssh/id_rsa,allow_other,default_permissions,StrictHostKeyChecking=no 0 0
 umount /root/sats/1
 umount /root/sats/2
 umount /root/sats/3
 mkdir -p /root/sats/{1,2,3}
 
-sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1
-sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2
-sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3
-
-
-
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa -o StrictHostKeyChecking=no root@192.168.8.240:/opt/unetlab/tmp/ /root/sats/1
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa -o StrictHostKeyChecking=no root@192.168.8.230:/opt/unetlab/tmp/ /root/sats/2
+sshfs -o allow_other,default_permissions -o reconnect -o cache=no -o identityfile=/root/.ssh/id_rsa -o StrictHostKeyChecking=no root@192.168.8.220:/opt/unetlab/tmp/ /root/sats/3
 
 '''
-
-
